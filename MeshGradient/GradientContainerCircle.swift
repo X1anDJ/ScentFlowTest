@@ -7,9 +7,9 @@ struct GradientContainerCircle: View {
     
     var body: some View {
         ZStack {
-            // Rim (liquid-glass styled ring)
             GlassRing(width: rimWidth)
                 .accessibilityHidden(true)
+                .glassEffect()
             
             // Inner gradient disk
             MeshColorCircle(colors: colors)
@@ -65,6 +65,7 @@ private struct GlassRing: View {
                     .shadow(color: .black.opacity(0.06), radius: 6, x: 0, y: 2)
             }
             .frame(width: side, height: side)
+            
         }
         .aspectRatio(1, contentMode: .fit)
     }

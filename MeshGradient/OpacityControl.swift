@@ -3,12 +3,11 @@ import SwiftUI
 struct OpacityControl: View {
     let focusedName: String?
     let isFocusedIncluded: Bool
-    /// Effective stored value in the VM (0...1), capped by `AppConfig.maxIntensity` via UI mapping.
+    /// Effective stored value in the VM (0...AppConfig.maxIntensity).
     let value: Double
     let onChange: (_ name: String, _ value: Double) -> Void
 
     /// Slider shows 0...100%, while the applied value is `slider * maxIntensity`.
-    /// displayed = effective / maxIntensity, applied = displayed * maxIntensity
     private var displayedSliderValue: Double {
         guard isFocusedIncluded else { return 0 }
         let maxI = max(0.0001, AppConfig.maxIntensity)
@@ -19,29 +18,13 @@ struct OpacityControl: View {
         Group {
             if let name = focusedName, isFocusedIncluded {
                 VStack(alignment: .leading, spacing: 10) {
+                    // Title row — now "<Color> Scent" (no separate color label)
                     HStack {
-                        Text("Intensity")
-                            .font(.headline)
+                        Text("\(name) Scent")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+
                         Spacer()
-                        Text(name)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    HStack(spacing: 12) {
-                        Image(systemName: "drop.fill").opacity(0.6)
-
-                        Slider(
-                            value: Binding(
-                                get: { displayedSliderValue },
-                                set: { newDisplayed in
-                                    let clamped = max(0, min(1, newDisplayed))
-                                    let applied = clamped * AppConfig.maxIntensity
-                                    onChange(name, applied)
-                                }
-                            ),
-                            in: 0...1
-                        )
 
                         // Show the slider's percentage (0–100), not the applied 0…maxIntensity.
                         Text(String(format: "%.0f%%", (displayedSliderValue * 100).rounded()))
@@ -49,6 +32,18 @@ struct OpacityControl: View {
                             .frame(width: 44, alignment: .trailing)
                             .opacity(0.9)
                     }
+
+                    // Slider (0...1 displayed), writes back scaled by maxIntensity
+                    Slider(
+                        value: Binding(
+                            get: { displayedSliderValue },
+                            set: { newDisplayed in
+                                let applied = newDisplayed * AppConfig.maxIntensity
+                                onChange(name, applied)
+                            }
+                        ),
+                        in: 0...1
+                    )
                 }
             } else {
                 // Blank when nothing is selected (no hint text)

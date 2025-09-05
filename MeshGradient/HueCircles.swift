@@ -35,14 +35,16 @@ struct HueCircles: View {
                             Circle()
                                 .fill(base)
                                 .frame(width: 24, height: 24)
+                            
                         }
                     }
                 }
                 .buttonStyle(.plain)
-                .opacity(isAdded || canSelectMore ? 1 : 0.5) // disable when at 6
+                .opacity(isAdded || canSelectMore ? 1 : 0.8) // disable when at 6
                 .scaleEffect(isFocused ? 1.08 : 1.0)
                 .animation(.spring(response: 0.25, dampingFraction: 0.9), value: isFocused)
                 .accessibilityLabel(Text("\(name) \(isAdded ? "added" : "not added")"))
+                
             }
         }
     }

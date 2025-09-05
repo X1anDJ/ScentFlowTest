@@ -1,8 +1,13 @@
-// ControlsCard.swift
 import SwiftUI
 
 struct ControlsCard: View {
-    // Inputs
+    // MARK: - Parent (Device)
+    let isPowerOn: Bool
+    let fanSpeed: Double
+    let onTogglePower: () -> Void
+    let onChangeFanSpeed: (Double) -> Void
+
+    // MARK: - Child (Scents)
     let names: [String]
     let colorDict: [String: Color]
     let included: Set<String>
@@ -12,60 +17,70 @@ struct ControlsCard: View {
     let onTapHue: (String) -> Void
     let onChangeOpacity: (_ name: String, _ value: Double) -> Void
 
-    // Local UI state
     @State private var isExpanded = false
 
     var body: some View {
-        CardContainer(title: "Controls", trailing: expandButton) {
+        CardContainer(title: "Controls") {
             VStack(spacing: 16) {
-                // Hue chips row
-                HueCircles(
-                    names: names,
-                    colorDict: colorDict,
-                    included: included,
-                    focusedName: focusedName,
-                    canSelectMore: canSelectMore,
-                    onTap: onTapHue
+
+                // Parent hierarchy: Power + (revealed) Fan
+                PowerFanGroup(
+                    isOn: isPowerOn,
+                    speed: fanSpeed,
+                    onToggle: onTogglePower,
+                    onChangeSpeed: onChangeFanSpeed
                 )
 
-                // Focused scent single slider (collapsed mode)
-                if !isExpanded,
-                   let f = focusedName {
-                    OpacityControl(
-                        focusedName: f,
-                        isFocusedIncluded: included.contains(f),
-                        value: opacities[f] ?? 0,
-                        onChange: { name, sliderVal in
-                            onChangeOpacity(name, sliderVal)
-                        }
-                    )
-                }
+                // Child hierarchy: Scents (nested sub-card)
+                ChildCard(title: "Scents", trailing: childExpandButton) {
+                    VStack(spacing: 16) {
+                        // hue chips row
+                        HueCircles(
+                            names: names,
+                            colorDict: colorDict,
+                            included: included,
+                            focusedName: focusedName,
+                            canSelectMore: canSelectMore,
+                            onTap: onTapHue
+                        )
 
-                // Expanded rows (one per included scent)
-                if isExpanded {
-                    VStack(spacing: 12) {
-                        ForEach(names.filter { included.contains($0) }, id: \.self) { name in
-                            ColorRow(
-                                name: name,
-                                color: colorDict[name] ?? .gray,
-                                value: displayed(from: opacities[name] ?? 0),
-                                onChange: { newDisplayed in
-                                    let applied = newDisplayed * AppConfig.maxIntensity
-                                    onChangeOpacity(name, applied)
-                                },
-                                onTapChip: { onTapHue(name) }
+                        // single slider (collapsed)
+                        if !isExpanded, let f = focusedName {
+                            OpacityControl(
+                                focusedName: f,
+                                isFocusedIncluded: included.contains(f),
+                                value: opacities[f] ?? 0,
+                                onChange: { name, sliderVal in
+                                    onChangeOpacity(name, sliderVal)
+                                }
                             )
                         }
+
+                        // Expanded per-scent rows
+                        if isExpanded {
+                            VStack(spacing: 12) {
+                                ForEach(names.filter { included.contains($0) }, id: \.self) { name in
+                                    ColorRow(
+                                        name: name,
+                                        color: colorDict[name] ?? .gray,
+                                        value: displayed(from: opacities[name] ?? 0),
+                                        onChange: { newDisplayed in
+                                            let applied = newDisplayed * AppConfig.maxIntensity
+                                            onChangeOpacity(name, applied)
+                                        },
+                                        onTapChip: { onTapHue(name) }
+                                    )
+                                }
+                            }
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
                     }
-                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
         }
     }
 
-    // MARK: - Helpers
-
-    private var expandButton: some View {
+    private var childExpandButton: some View {
         Button {
             withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
                 isExpanded.toggle()
@@ -76,21 +91,56 @@ struct ControlsCard: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.secondary)
         }
-        .accessibilityLabel(isExpanded ? "Collapse controls" : "Expand controls")
+        .accessibilityLabel(isExpanded ? "Collapse scent controls" : "Expand scent controls")
     }
 
     private func displayed(from effective: Double) -> Double {
-        // UI shows 0...100% of the global cap
         let maxI = max(0.0001, AppConfig.maxIntensity)
         return min(1.0, max(0.0, effective / maxI))
     }
 }
 
-// One row for an included scent (chip + slider + %)
+// MARK: - Nested “child card” shell
+private struct ChildCard<Content: View>: View {
+    let title: String
+    let trailing: AnyView?
+    let content: () -> Content
+
+    init(title: String, trailing: some View = EmptyView(), @ViewBuilder content: @escaping () -> Content) {
+        self.title = title
+        self.trailing = AnyView(trailing)
+        self.content = content
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 8) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                trailing
+            }
+
+            content()
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(.white.opacity(0.14), lineWidth: 0.7)
+                        .blendMode(.overlay)
+                )
+        )
+    }
+}
+
+// MARK: - One row for an included scent (chip + slider + %)
 private struct ColorRow: View {
     let name: String
     let color: Color
-    @State var value: Double // 0...1 (displayed fraction of maxIntensity)
+    @State var value: Double // 0...1
     let onChange: (Double) -> Void
     let onTapChip: () -> Void
 
@@ -107,7 +157,8 @@ private struct ColorRow: View {
             .buttonStyle(.plain)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(name)
+                // UPDATED: show "<Color> Scent"
+                Text("\(name) Scent")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
 
