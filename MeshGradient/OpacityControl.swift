@@ -3,43 +3,56 @@ import SwiftUI
 struct OpacityControl: View {
     let focusedName: String?
     let isFocusedIncluded: Bool
+    /// Effective stored value in the VM (0...1), capped by `AppConfig.maxIntensity` via UI mapping.
     let value: Double
     let onChange: (_ name: String, _ value: Double) -> Void
-    
+
+    /// Slider shows 0...100%, while the applied value is `slider * maxIntensity`.
+    /// displayed = effective / maxIntensity, applied = displayed * maxIntensity
+    private var displayedSliderValue: Double {
+        guard isFocusedIncluded else { return 0 }
+        let maxI = max(0.0001, AppConfig.maxIntensity)
+        return min(1.0, value / maxI)
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("Opacity")
-                    .font(.headline)
-                Spacer()
-                if let name = focusedName {
-                    Text(name)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            
+        Group {
             if let name = focusedName, isFocusedIncluded {
-                HStack(spacing: 12) {
-                    Image(systemName: "drop.fill").opacity(0.6)
-                    Slider(value: Binding(
-                        get: { value },
-                        set: { onChange(name, $0) }
-                    ), in: 0...1)
-                    Text("\(Int(value * 100))%")
-                        .font(.footnote.monospacedDigit())
-                        .frame(width: 44, alignment: .trailing)
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text("Intensity")
+                            .font(.headline)
+                        Spacer()
+                        Text(name)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    HStack(spacing: 12) {
+                        Image(systemName: "drop.fill").opacity(0.6)
+
+                        Slider(
+                            value: Binding(
+                                get: { displayedSliderValue },
+                                set: { newDisplayed in
+                                    let clamped = max(0, min(1, newDisplayed))
+                                    let applied = clamped * AppConfig.maxIntensity
+                                    onChange(name, applied)
+                                }
+                            ),
+                            in: 0...1
+                        )
+
+                        // Show the slider's percentage (0–100), not the applied 0…maxIntensity.
+                        Text(String(format: "%.0f%%", (displayedSliderValue * 100).rounded()))
+                            .font(.footnote.monospacedDigit())
+                            .frame(width: 44, alignment: .trailing)
+                            .opacity(0.9)
+                    }
                 }
             } else {
-                Text("Tap a color to add it, then adjust its opacity here.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 6)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(Color.secondary.opacity(0.08))
-                    )
+                // Blank when nothing is selected (no hint text)
+                EmptyView()
             }
         }
     }

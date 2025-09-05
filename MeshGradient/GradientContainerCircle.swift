@@ -3,7 +3,7 @@ import SwiftUI
 /// A circular "container" with a liquid-glass style rim that holds the mesh gradient.
 struct GradientContainerCircle: View {
     let colors: [Color]
-    private let rimWidth: CGFloat = 16
+    private let rimWidth: CGFloat = 8
     
     var body: some View {
         ZStack {

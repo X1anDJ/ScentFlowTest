@@ -12,57 +12,91 @@ final class GradientWheelViewModel: ObservableObject {
         "Blue": .blue,
         "Violet": .purple
     ]
-    
+
     let canonicalOrder = ["Red", "Orange", "Yellow", "Green", "Cyan", "Blue", "Violet"]
-    
+
     // Added colors (0–6)
     @Published var included: Set<String> = []
-    
-    // Per-color opacity (0…1). Defaults to 1.
+
+    // Per-color intensity (0…1). Default now honors the global cap.
     @Published var opacities: [String: Double] = [
-        "Red": 1, "Orange": 1, "Yellow": 1, "Green": 1, "Cyan": 1, "Blue": 1, "Violet": 1
+        "Red": AppConfig.maxIntensity,
+        "Orange": AppConfig.maxIntensity,
+        "Yellow": AppConfig.maxIntensity,
+        "Green": AppConfig.maxIntensity,
+        "Cyan": AppConfig.maxIntensity,
+        "Blue": AppConfig.maxIntensity,
+        "Violet": AppConfig.maxIntensity
     ]
-    
+
     // Which color the slider is currently editing
     @Published var focusedName: String? = nil
-    
+
     var canSelectMore: Bool { included.count < 6 }
-    
+
+    /// Toggle logic:
+    /// - If tapping an INCLUDED hue that is NOT focused -> just focus it (do NOT remove).
+    /// - If tapping an INCLUDED hue that IS focused -> remove it, then focus the next available (if any).
+    /// - If tapping a NOT-INCLUDED hue -> add it (respecting the cap) and focus it.
     func toggle(_ name: String) {
         if included.contains(name) {
-            included.remove(name)
+            if focusedName == name {
+                included.remove(name)
+                if let next = canonicalOrder.first(where: { included.contains($0) }) {
+                    focusedName = next
+                } else {
+                    focusedName = nil
+                }
+            } else {
+                focusedName = name
+            }
         } else {
             guard canSelectMore else { return }
             included.insert(name)
+            focusedName = name
         }
-        focusedName = name // focus the tapped color either way
     }
-    
+
+    /// Set intensity; clamp to the global max.
     func setOpacity(_ value: Double, for name: String) {
-        opacities[name] = min(1, max(0, value))
+        opacities[name] = min(AppConfig.maxIntensity, max(0, value))
     }
-    
+
+    /// Apply a template to the current selection (clamps to global max).
+    /// - Trims to canonical order and caps at 6 colors.
+    func applyTemplate(included newIncluded: Set<String>, opacities newOpacities: [String: Double]) {
+        let ordered = canonicalOrder.filter { newIncluded.contains($0) }
+        let capped = Array(ordered.prefix(6))
+        included = Set(capped)
+        for name in capped {
+            let raw = newOpacities[name] ?? AppConfig.maxIntensity
+            opacities[name] = min(AppConfig.maxIntensity, max(0, raw))
+        }
+        focusedName = capped.first
+    }
+
     /// Colors to feed the mesh.
-    /// - Applies per-hue opacity and filters near-zero alphas.
-    /// - Ensures the mesh has at least 3 stops by synthesizing duplicates:
+    /// - Uses clamped intensity = min(opacity, AppConfig.maxIntensity)
+    /// - Filters ~transparent entries.
+    /// - Ensures at least 3 stops by synthesizing duplicates:
     ///   1 color a -> [a, a/2, a/4]; 2 colors -> duplicate the first at a/2.
     var selectedColorsWeighted: [Color] {
         let names = canonicalOrder.filter { included.contains($0) }
-        
-        // Capture base + alpha so we can synthesize deterministically.
+
+        // Capture base + clamped alpha so the cap applies even before any slider move.
         let entries: [(base: Color, alpha: Double)] = names.compactMap { name in
             guard let base = colorDict[name] else { return nil }
-            let a = opacities[name] ?? 1
+            let raw = opacities[name] ?? AppConfig.maxIntensity
+            let a = min(AppConfig.maxIntensity, max(0, raw))
             guard a > 0.01 else { return nil }
             return (base, a)
         }
-        
+
         switch entries.count {
         case 0:
             return []
         case 1:
             let (base, a) = entries[0]
-            // e.g. 0.8 -> [0.8, 0.4, 0.2]
             return [
                 base.withAlpha(a),
                 base.withAlpha(a / 2),
@@ -91,7 +125,7 @@ private extension Color {
                          red: Double(r),
                          green: Double(g),
                          blue: Double(b),
-                         opacity: a)   // SwiftUI Color uses `opacity:`
+                         opacity: a)
         }
         return self.opacity(a)
     }

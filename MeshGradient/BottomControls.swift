@@ -10,29 +10,19 @@ struct BottomControls: View {
     let opacities: [String: Double]
     let onTapHue: (String) -> Void
     let onChangeOpacity: (_ name: String, _ value: Double) -> Void
+    let onApplyTemplate: (_ included: Set<String>, _ opacities: [String: Double]) -> Void
 
     // Local UI state
     @State private var isExpanded = false
     @State private var pageIndex = 0 // 0 = Controls, 1 = Templates
+    @State private var activeTemplateName: String? = nil // nil -> "Unsaved Scent"
 
-    // Sample templates (replace with your own persistence later)
-    @State private var templates: [ColorTemplate] = [
-        ColorTemplate(
-            name: "Sunset",
-            included: ["Red", "Orange", "Violet"],
-            opacities: ["Red": 0.9, "Orange": 0.8, "Violet": 0.7]
-        ),
-        ColorTemplate(
-            name: "Ocean",
-            included: ["Cyan", "Blue", "Green"],
-            opacities: ["Cyan": 0.9, "Blue": 0.8, "Green": 0.6]
-        ),
-        ColorTemplate(
-            name: "Mint",
-            included: ["Green", "Cyan"],
-            opacities: ["Green": 0.7, "Cyan": 0.6]
-        )
-    ]
+    // Templates live here; you can move this into the VM later if you want persistence.
+    @State private var templates: [ColorTemplate] = []
+
+    // Save flow
+    @State private var showSaveSheet = false
+    @State private var newTemplateName = ""
 
     // MARK: - Height caps to keep the circle visible
     private var targetHeight: CGFloat {
@@ -41,12 +31,21 @@ struct BottomControls: View {
         #else
         let H: CGFloat = 900
         #endif
-        // Reasonable caps for different pages/states (fits bottom, avoids covering center)
         let collapsed = min(200, H * 0.28)
         let expanded  = min(420, H * 0.55)
-        let templates = min(240, H * 0.32)
-        if pageIndex == 1 { return templates }
+        let templatesH = min(200, H * 0.28)
+        if pageIndex == 1 { return templatesH }
         return isExpanded ? expanded : collapsed
+    }
+
+    // Clear template binding whenever the user tweaks anything.
+    private func handleTapHue(_ name: String) {
+        activeTemplateName = nil
+        onTapHue(name)
+    }
+    private func handleChangeOpacity(_ name: String, _ value: Double) {
+        activeTemplateName = nil
+        onChangeOpacity(name, value)
     }
 
     var body: some View {
@@ -57,13 +56,29 @@ struct BottomControls: View {
                     .font(.system(size: 15, weight: .semibold))
                     .opacity(0.85)
                     .animation(.default, value: pageIndex)
+
                 Text(headerTitle)
                     .font(.headline)
                     .opacity(0.95)
                     .animation(.default, value: pageIndex)
+
                 Spacer()
 
-                // Simple page indicator (two dots)
+                // Save button (controls page only)
+                if pageIndex == 0 {
+                    Button {
+                        showSaveSheet = true
+                    } label: {
+                        Label("Save", systemImage: "tray.and.arrow.down")
+                            .labelStyle(.iconOnly)
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+                    .buttonStyle(.plain)
+                    .opacity(included.isEmpty ? 0.25 : 0.9)
+                    .disabled(included.isEmpty)
+                }
+
+                // Page indicator (two dots)
                 HStack(spacing: 6) {
                     Circle().frame(width: 6, height: 6)
                         .opacity(pageIndex == 0 ? 0.95 : 0.25)
@@ -98,16 +113,30 @@ struct BottomControls: View {
                     canSelectMore: canSelectMore,
                     opacities: opacities,
                     isExpanded: $isExpanded,
-                    onTapHue: onTapHue,
-                    onChangeOpacity: onChangeOpacity
+                    onTapHue: handleTapHue,
+                    onChangeOpacity: handleChangeOpacity
                 )
                 .tag(0)
 
                 // PAGE 1 – Templates
-                TemplatesPage(
+                TemplatesGallery(
                     names: names,
                     colorDict: colorDict,
-                    templates: templates
+                    templates: templates,
+                    onTapTemplate: { t in
+                        // Apply + reflect the active template name
+                        activeTemplateName = t.name
+                        onApplyTemplate(t.included, t.opacities)
+                        // Snap to Controls page after applying
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
+                            pageIndex = 0
+                            isExpanded = false
+                        }
+                    },
+                    onDeleteTemplate: { t in
+                        templates.removeAll { $0.id == t.id }
+                        if activeTemplateName == t.name { activeTemplateName = nil }
+                    }
                 )
                 .tag(1)
             }
@@ -124,10 +153,8 @@ struct BottomControls: View {
                 .strokeBorder(.white.opacity(0.12), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.25), radius: 18, x: 0, y: 12)
-        // Cap the CARD height so it stays a "bottom control"
         .frame(maxWidth: .infinity)
         .frame(height: targetHeight)
-        // Tap anywhere on the card to expand (only on Controls page to avoid slider conflicts)
         .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .onTapGesture {
             guard pageIndex == 0, !isExpanded else { return }
@@ -135,13 +162,45 @@ struct BottomControls: View {
                 isExpanded = true
             }
         }
+        .sheet(isPresented: $showSaveSheet) {
+            SaveTemplateSheet(
+                name: $newTemplateName,
+                suggestedName: suggestedTemplateName(),
+                onCancel: {
+                    newTemplateName = ""
+                    showSaveSheet = false
+                },
+                onSave: { name in
+                    let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let finalName = trimmed.isEmpty ? suggestedTemplateName() : trimmed
+                    let filteredOpacities = names.reduce(into: [String: Double]()) { acc, key in
+                        if included.contains(key) { acc[key] = opacities[key] ?? 1 }
+                    }
+                    let newT = ColorTemplate(name: finalName, included: included, opacities: filteredOpacities)
+                    templates.append(newT)
+                    activeTemplateName = finalName // saved -> no longer "Unsaved Scent"
+                    newTemplateName = ""
+                    showSaveSheet = false
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
+                        pageIndex = 1
+                    }
+                }
+            )
+            .presentationDetents([.height(220)])
+            .presentationCornerRadius(20)
+        }
     }
 
     private var headerTitle: String {
-        pageIndex == 0 ? "Color Controls" : "Templates"
+        if pageIndex == 1 { return "Templates" }
+        return activeTemplateName ?? "Unsaved Scent"
     }
     private var headerIcon: String {
         pageIndex == 0 ? "slider.horizontal.3" : "square.grid.2x2"
+    }
+    private func suggestedTemplateName() -> String {
+        let count = templates.count + 1
+        return "Template \(count)"
     }
 }
 
@@ -161,7 +220,6 @@ private struct ControlsPage: View {
     var body: some View {
         Group {
             if isExpanded {
-                // Expanded: make content scrollable so the card height can stay capped.
                 ScrollView(.vertical, showsIndicators: true) {
                     ExpandedControls(
                         names: names,
@@ -175,7 +233,6 @@ private struct ControlsPage: View {
                     .padding(.bottom, 6)
                 }
             } else {
-                // Collapsed: hue picker row + single contextual slider
                 VStack(spacing: 14) {
                     HueCircles(
                         names: names,
@@ -186,6 +243,7 @@ private struct ControlsPage: View {
                         onTap: onTapHue
                     )
 
+                    // Collapsed, per-focused control – blank when no focused+included
                     OpacityControl(
                         focusedName: focusedName,
                         isFocusedIncluded: focusedName.map { included.contains($0) } ?? false,
@@ -212,7 +270,6 @@ private struct ExpandedControls: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
-            // Left column: vertical list of colors with sliders
             VStack(alignment: .leading, spacing: 14) {
                 ForEach(names, id: \.self) { name in
                     ColorRow(
@@ -227,7 +284,6 @@ private struct ExpandedControls: View {
                 }
             }
             .frame(minWidth: 240, alignment: .leading)
-
             Spacer(minLength: 0)
         }
         .padding(.bottom, 2)
@@ -238,17 +294,25 @@ private struct ColorRow: View {
     let name: String
     let color: Color
     let isIncluded: Bool
+    /// Effective stored value (0...1). UI maps it to a 0–100 slider with cap `AppConfig.maxIntensity`.
     let value: Double
     let canSelectMore: Bool
     let onTapHue: (String) -> Void
     let onChangeOpacity: (String, Double) -> Void
+
+    private var displayedSliderValue: Double {
+        isIncluded ? min(1.0, value / max(0.0001, AppConfig.maxIntensity)) : 0
+    }
+    private var displayedPercentText: String {
+        String(format: "%.0f%%", (displayedSliderValue * 100).rounded())
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 Button {
                     if isIncluded {
-                        onTapHue(name) // remove
+                        onTapHue(name) // remove only if focused per VM logic
                     } else if canSelectMore {
                         onTapHue(name) // add
                     }
@@ -281,15 +345,20 @@ private struct ColorRow: View {
 
                 Spacer()
 
-                Text(String(format: "%.0f%%", (value * 100).rounded()))
+                // Show slider's percent, not the applied effective fraction
+                Text(displayedPercentText)
                     .font(.footnote.monospacedDigit())
                     .opacity(isIncluded ? 0.9 : 0.4)
             }
 
             Slider(
                 value: Binding(
-                    get: { value },
-                    set: { onChangeOpacity(name, $0) }
+                    get: { displayedSliderValue },
+                    set: { newDisplayed in
+                        let clamped = max(0, min(1, newDisplayed))
+                        let applied = clamped * AppConfig.maxIntensity
+                        onChangeOpacity(name, applied)
+                    }
                 ),
                 in: 0...1
             )
@@ -308,117 +377,33 @@ private struct ColorRow: View {
     }
 }
 
-// MARK: - Templates Page
+// MARK: - Save Sheet
 
-private struct TemplatesPage: View {
-    let names: [String]
-    let colorDict: [String: Color]
-    let templates: [ColorTemplate]
+private struct SaveTemplateSheet: View {
+    @Binding var name: String
+    let suggestedName: String
+    let onCancel: () -> Void
+    let onSave: (String) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Saved Templates")
-                .font(.subheadline.weight(.semibold))
-                .opacity(0.9)
-                .padding(.top, 4)
+        VStack(spacing: 16) {
+            Capsule().frame(width: 40, height: 5).opacity(0.25)
+            Text("Save Template")
+                .font(.headline)
+                .opacity(0.95)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 14) {
-                    ForEach(templates) { t in
-                        VStack(spacing: 8) {
-                            let palette = buildPalette(
-                                canonicalOrder: names,
-                                colorDict: colorDict,
-                                included: t.included,
-                                opacities: t.opacities
-                            )
+            TextField(suggestedName, text: $name)
+                .textFieldStyle(.roundedBorder)
+                .padding(.horizontal, 12)
 
-                            GradientContainerCircle(colors: palette)
-                                .frame(width: 80, height: 80)
-
-                            Text(t.name)
-                                .font(.footnote)
-                                .lineLimit(1)
-                                .frame(width: 90)
-                                .multilineTextAlignment(.center)
-                                .opacity(0.9)
-                        }
-                        .padding(10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(.ultraThinMaterial)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                        .strokeBorder(.white.opacity(0.10), lineWidth: 1)
-                                )
-                        )
-                    }
-                }
-                .padding(.vertical, 4)
+            HStack(spacing: 12) {
+                Button("Cancel", action: onCancel)
+                    .buttonStyle(.bordered)
+                Button("Save") { onSave(name) }
+                    .buttonStyle(.borderedProminent)
             }
         }
-    }
-}
-
-// MARK: - Model + Helpers for Templates
-
-private struct ColorTemplate: Identifiable {
-    let id = UUID()
-    let name: String
-    let included: Set<String>
-    let opacities: [String: Double]
-}
-
-/// Build a palette like the VM does:
-/// - apply per-name opacity,
-/// - drop ~transparent entries,
-/// - ensure at least 3 stops by synthesizing when needed.
-private func buildPalette(
-    canonicalOrder: [String],
-    colorDict: [String: Color],
-    included: Set<String>,
-    opacities: [String: Double]
-) -> [Color] {
-
-    let entries: [(Color, Double)] = canonicalOrder
-        .filter { included.contains($0) }
-        .compactMap { name in
-            guard let base = colorDict[name] else { return nil }
-            let a = opacities[name] ?? 1
-            return a > 0.01 ? (base, a) : nil
-        }
-
-    func withAlpha(_ c: Color, _ a: Double) -> Color {
-        #if canImport(UIKit)
-        let ui = UIColor(c)
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, oldA: CGFloat = 0
-        if ui.getRed(&r, green: &g, blue: &b, alpha: &oldA) {
-            return Color(.sRGB, red: Double(r), green: Double(g), blue: Double(b), opacity: a)
-        }
-        return c.opacity(a)
-        #elseif canImport(AppKit)
-        let ns = NSColor(c)
-        guard let s = ns.usingColorSpace(.sRGB) else { return c.opacity(a) }
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, oldA: CGFloat = 0
-        s.getRed(&r, green: &g, blue: &b, alpha: &oldA)
-        return Color(.sRGB, red: Double(r), green: Double(g), blue: Double(b), opacity: a)
-        #else
-        return c.opacity(a)
-        #endif
-    }
-
-    switch entries.count {
-    case 0:
-        return []
-    case 1:
-        let (base, a) = entries[0]
-        return [withAlpha(base, a), withAlpha(base, a/2), withAlpha(base, a/4)]
-    case 2:
-        var out = entries.map { withAlpha($0.0, $0.1) }
-        out.append(withAlpha(entries[0].0, entries[0].1 / 2))
-        return out
-    default:
-        return entries.map { withAlpha($0.0, $0.1) }
+        .padding(16)
     }
 }
 
@@ -430,7 +415,6 @@ private struct LiquidGlassBackground: View {
     var body: some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
             .fill(.ultraThinMaterial)
-            // Subtle diagonal sheen
             .overlay(
                 LinearGradient(
                     stops: [
@@ -443,45 +427,11 @@ private struct LiquidGlassBackground: View {
                 )
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             )
-            // Inner highlight
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .stroke(.white.opacity(0.18), lineWidth: 0.8)
                     .blendMode(.overlay)
             )
-            // Soft outer shadow for "liquid glass" float
             .shadow(color: .black.opacity(0.25), radius: 24, x: 0, y: 18)
     }
-}
-
-// MARK: - Preview
-
-#Preview {
-    // Lightweight harness for previewing the control
-    struct Harness: View {
-        @StateObject var vm = GradientWheelViewModel()
-        var body: some View {
-            ZStack {
-                LinearGradient(colors: [.black, .gray.opacity(0.4)], startPoint: .top, endPoint: .bottom)
-                    .ignoresSafeArea()
-                VStack {
-                    Spacer()
-                    BottomControls(
-                        names: vm.canonicalOrder,
-                        colorDict: vm.colorDict,
-                        included: vm.included,
-                        focusedName: vm.focusedName,
-                        canSelectMore: vm.canSelectMore,
-                        opacities: vm.opacities,
-                        onTapHue: { vm.toggle($0) },
-                        onChangeOpacity: { name, v in vm.setOpacity(v, for: name) }
-                    )
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 24)
-                }
-            }
-            .preferredColorScheme(.dark)
-        }
-    }
-    return Harness()
 }
