@@ -1,0 +1,30 @@
+# Xcode
+DerivedData/
+build/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+*.xcworkspace/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+
+# SwiftPM
+.swiftpm/
+.build/
+
+# CocoaPods
+Pods/
+*.xcworkspace
+
+# Carthage
+Carthage/Build/
+
+# Fastlane
+fastlane/report.xml
+fastlane/test_output/
+
+# macOS junk
+.DS_Store
+
+# Logs
+*.log
