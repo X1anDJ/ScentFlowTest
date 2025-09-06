@@ -47,9 +47,17 @@ private struct MixPage: View {
                 // Center wheel. When power is OFF we pass [] so the glassy empty circle shows.
                 GeometryReader { geo in
                     let side = min(geo.size.width, geo.size.height) * 0.65
-                    GradientContainerCircle(colors: vm.isPowerOn ? vm.selectedColorsWeighted : [])
-                        .frame(width: side, height: side)
-                        .position(x: geo.size.width / 2, y: geo.size.height / 2)
+
+                    ZStack {
+
+                        //Add shadow if wanted in the future
+                        
+                        GradientContainerCircle(colors: vm.isPowerOn ? vm.selectedColorsWeighted : [])
+                            .frame(width: side, height: side)
+
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .position(x: geo.size.width / 2, y: geo.size.height / 2)
                 }
                 .frame(height: UIScreen.main.bounds.height * 0.45)
                 .ignoresSafeArea(.keyboard)
@@ -87,8 +95,8 @@ private struct MixPage: View {
             .padding(.horizontal)
             .padding(.bottom, 24)
         }
-        .navigationTitle("ScentFlow")                 // <- new title
-        
+        .navigationTitle("ScentFlow")
+//        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

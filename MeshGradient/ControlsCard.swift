@@ -43,6 +43,7 @@ struct ControlsCard: View {
                             canSelectMore: canSelectMore,
                             onTap: onTapHue
                         )
+                        
 
                         // single slider (collapsed)
                         if !isExpanded, let f = focusedName {
@@ -155,6 +156,7 @@ private struct ColorRow: View {
                     .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
             }
             .buttonStyle(.plain)
+            
 
             VStack(alignment: .leading, spacing: 4) {
                 // UPDATED: show "<Color> Scent"
@@ -187,5 +189,6 @@ private struct ColorRow: View {
                         .blendMode(.overlay)
                 )
         )
+        
     }
 }

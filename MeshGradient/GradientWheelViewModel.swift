@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 
+@MainActor
 final class GradientWheelViewModel: ObservableObject {
     // MARK: - Device (parent controls)
     @Published var isPowerOn: Bool = true
