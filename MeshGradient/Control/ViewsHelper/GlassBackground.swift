@@ -17,7 +17,7 @@ struct GlassBackground<S: InsettableShape>: ViewModifier {
         if #available(iOS 26.0, *) {
             // Liquid Glass on iOS 26+
             content
-                .glassEffect(.regular, in: shape)
+                .glassEffect(.clear, in: shape)
         } else {
             // Fallback for older iOS: material in the same shape
             content

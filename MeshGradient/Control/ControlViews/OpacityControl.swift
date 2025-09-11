@@ -17,7 +17,7 @@ struct OpacityControl: View {
     var body: some View {
         Group {
             if let name = focusedName, isFocusedIncluded {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 12) {
                     // Title row — now "<Color> Scent" (no separate color label)
                     HStack {
                         Text("\(name) Scent")
