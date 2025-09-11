@@ -43,7 +43,7 @@ private struct MixPage: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            VStack(spacing: 10) {
                 // Center wheel. When power is OFF we pass [] so the glassy empty circle shows.
                 GeometryReader { geo in
                     let side = min(geo.size.width, geo.size.height) * 0.65
@@ -93,7 +93,7 @@ private struct MixPage: View {
                 )
             }
             .padding(.horizontal)
-            .padding(.bottom, 24)
+//            .padding(.bottom, 24)
         }
         .navigationTitle("ScentFlow")
 //        .navigationBarTitleDisplayMode(.inline)

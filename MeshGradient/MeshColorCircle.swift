@@ -9,7 +9,7 @@ struct MeshColorCircle: View {
     var body: some View {
         ZStack {
             if colors.isEmpty {
-                GlassyCircle()
+//                GlassyCircle()
             } else {
                 MeshDisk(colors: colors, isAnimating: isAnimating)
                     .onAppear {

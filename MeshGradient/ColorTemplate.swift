@@ -19,11 +19,6 @@ struct TemplatesGallery: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-//            Text("Saved Templates")
-//                .font(.subheadline.weight(.semibold))
-//                .opacity(0.9)
-//                .padding(.top, 4)
-
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 14) {
                     ForEach(templates) { t in
@@ -96,13 +91,11 @@ private struct TemplateCard: View {
                 .opacity(0.9)
         }
         .padding(10)
-        .background(
+        // Glassy card
+        .adaptiveGlassBackground(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(.white.opacity(0.10), lineWidth: 1)
-                )
+                .strokeBorder(.white.opacity(0.10), lineWidth: 1)
         )
     }
 }
@@ -129,7 +122,7 @@ private func buildPalette(
         #if canImport(UIKit)
         let ui = UIColor(c)
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, oldA: CGFloat = 0
-        if ui.getRed(&r, green: &g, blue: &b, alpha: &oldA) {
+        if ui.getRed(&r, green: &g, blue:&b, alpha:&oldA) {
             return Color(.sRGB, red: Double(r), green: Double(g), blue: Double(b), opacity: a)
         }
         return c.opacity(a)

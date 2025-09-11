@@ -9,7 +9,7 @@ struct GradientContainerCircle: View {
         ZStack {
             GlassRing(width: rimWidth)
                 .accessibilityHidden(true)
-                .glassEffect()
+                .glassEffect(.clear)
             
             // Inner gradient disk
             MeshColorCircle(colors: colors)
@@ -68,5 +68,14 @@ private struct GlassRing: View {
             
         }
         .aspectRatio(1, contentMode: .fit)
+    }
+}
+
+
+//Preview
+
+struct GlassRing_Previews: PreviewProvider {
+    static var previews: some View {
+        GlassRing(width: 10)
     }
 }

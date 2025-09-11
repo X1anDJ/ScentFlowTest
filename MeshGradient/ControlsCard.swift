@@ -43,7 +43,6 @@ struct ControlsCard: View {
                             canSelectMore: canSelectMore,
                             onTap: onTapHue
                         )
-                        
 
                         // single slider (collapsed)
                         if !isExpanded, let f = focusedName {
@@ -125,14 +124,11 @@ private struct ChildCard<Content: View>: View {
             content()
         }
         .padding(14)
-        .background(
+        .adaptiveGlassBackground(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(.white.opacity(0.14), lineWidth: 0.7)
-                        .blendMode(.overlay)
-                )
+                .stroke(.white.opacity(0.14), lineWidth: 0.7)
+                .blendMode(.overlay)
         )
     }
 }
@@ -156,10 +152,8 @@ private struct ColorRow: View {
                     .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
             }
             .buttonStyle(.plain)
-            
 
             VStack(alignment: .leading, spacing: 4) {
-                // UPDATED: show "<Color> Scent"
                 Text("\(name) Scent")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
@@ -180,15 +174,11 @@ private struct ColorRow: View {
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 6)
-        .background(
+        .adaptiveGlassBackground(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(.white.opacity(0.12), lineWidth: 0.7)
-                        .blendMode(.overlay)
-                )
+                .stroke(.white.opacity(0.12), lineWidth: 0.7)
+                .blendMode(.overlay)
         )
-        
     }
 }

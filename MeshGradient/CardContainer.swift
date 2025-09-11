@@ -1,12 +1,9 @@
-//
 //  CardContainer.swift
 //  MeshGradient
 //
 //  Created by Dajun Xian on 9/5/25.
 //
 
-
-// CardContainer.swift
 import SwiftUI
 
 struct CardContainer<Content: View>: View {
@@ -32,18 +29,15 @@ struct CardContainer<Content: View>: View {
             content()
         }
         .padding(16)
-        .background(
+        // Glass (iOS 26+) or ultraThinMaterial fallback in a rounded rect
+        .adaptiveGlassBackground(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        // Keep your subtle edge highlight
+        .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(.white.opacity(0.18), lineWidth: 0.8)
-                        .blendMode(.overlay)
-                )
-            
-                .shadow(color: .black.opacity(0.18), radius: 18, x: 0, y: 10)
+                .stroke(.white.opacity(0.18), lineWidth: 0.8)
+                .blendMode(.overlay)
         )
-        
+        // Original shadow
+        .shadow(color: .black.opacity(0.18), radius: 18, x: 0, y: 10)
     }
-
 }
