@@ -1,100 +1,66 @@
-// TemplatesCard.swift
 import SwiftUI
 
+/// Wrapper that matches your original ContentView call site:
+/// TemplatesCard(
+///   names: [String],
+///   colorDict: [String: Color],
+///   included: Set<String>,
+///   opacities: [String: Double],
+///   onApplyTemplate: (Set<String>, [String: Double]) -> Void
+/// )
 struct TemplatesCard: View {
     let names: [String]
     let colorDict: [String: Color]
-    let included: Set<String>                 // <- current mix passed in
-    let opacities: [String: Double]           // <- current mix passed in
+    let included: Set<String>                 // current mix
+    let opacities: [String: Double]           // current mix
     let onApplyTemplate: (_ included: Set<String>, _ opacities: [String: Double]) -> Void
 
+    // In-memory list of saved templates (string-based model to match your ColorTemplate.swift)
     @State private var templates: [ColorTemplate] = []
-    @State private var showingSaveSheet = false
-    @State private var newTemplateName = ""
 
     var body: some View {
-        CardContainer(title: "Templates", trailing: saveButton) {
+        CardContainer(title: "Templates") {
+            // trailing actions
+            HStack(spacing: 8) {
+                Button {
+                    saveCurrentTemplate()
+                } label: {
+                    Label("Save", systemImage: "plus.circle.fill")
+                        .labelStyle(.titleAndIcon)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+            }
+        } content: {
             if templates.isEmpty {
-                Text("No templates yet. Tap Save to add your current mix.")
-                    .font(.subheadline)
+                Text("No templates yet. Tap **Save** to capture the current mix.")
+                    .font(.callout)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
+                // Uses your existing TemplatesGallery from ColorTemplate.swift
                 TemplatesGallery(
                     names: names,
                     colorDict: colorDict,
                     templates: templates,
-                    onTapTemplate: { template in
-                        onApplyTemplate(template.included, template.opacities)
+                    onTapTemplate: { t in
+                        onApplyTemplate(t.included, t.opacities)
                     },
-                    onDeleteTemplate: { template in
-                        templates.removeAll { $0.id == template.id }
+                    onDeleteTemplate: { t in
+                        templates.removeAll { $0.id == t.id }
                     }
                 )
             }
         }
-        .sheet(isPresented: $showingSaveSheet) {
-            SaveTemplateSheet(
-                name: $newTemplateName,
-                onCancel: { showingSaveSheet = false },
-                onSave: {
-                    let tmpl = ColorTemplate(
-                        name: newTemplateName.isEmpty ? "Untitled" : newTemplateName,
-                        included: included,
-                        opacities: opacities
-                    )
-                    templates.append(tmpl)
-                    newTemplateName = ""
-                    showingSaveSheet = false
-                }
-            )
-            .presentationDetents([.height(200)])
-        }
     }
 
-    // MARK: - Save current mix
-
-    private var saveButton: some View {
-        Button {
-            showingSaveSheet = true
-        } label: {
-            Label("Save", systemImage: "tray.and.arrow.down")
-                .labelStyle(.iconOnly)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.secondary)
-        }
-        .accessibilityLabel("Save current mix as template")
-    }
-}
-
-// A tiny sheet to name a template
-private struct SaveTemplateSheet: View {
-    @Binding var name: String
-    let onCancel: () -> Void
-    let onSave: () -> Void
-
-    var body: some View {
-        VStack(spacing: 16) {
-            Capsule().fill(.secondary.opacity(0.25)).frame(width: 44, height: 5)
-                .padding(.top, 8)
-
-            Text("Save Template")
-                .font(.headline)
-
-            TextField("Template name", text: $name)
-                .textFieldStyle(.roundedBorder)
-                .padding(.horizontal)
-
-            HStack {
-                Button("Cancel", action: onCancel)
-                Spacer()
-                Button("Save", action: onSave)
-                    .buttonStyle(.borderedProminent)
-            }
-            .padding(.horizontal)
-
-            Spacer(minLength: 12)
-        }
-        .padding(.bottom, 12)
+    private func saveCurrentTemplate() {
+        // Give it a simple default name based on count
+        let new = ColorTemplate(
+            name: "Mix \(templates.count + 1)",
+            included: included,
+            opacities: opacities
+        )
+        templates.insert(new, at: 0)
     }
 }

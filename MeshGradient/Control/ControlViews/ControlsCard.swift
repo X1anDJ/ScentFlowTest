@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ControlsCard: View {
-    // MARK: - Parent (Device)
+    // MARK: - Parent (Device) — values + intents (no bindings here)
     let isPowerOn: Bool
     let fanSpeed: Double
     let onTogglePower: () -> Void
@@ -17,13 +17,14 @@ struct ControlsCard: View {
     let onTapHue: (String) -> Void
     let onChangeOpacity: (_ name: String, _ value: Double) -> Void
 
+    // UI
     @State private var isExpanded = false
 
     var body: some View {
-        CardContainer(title: "Controls") {
+        // Use explicit trailing builder so generics always infer
+        CardContainer(title: "Controls", trailing: { EmptyView() }) {
             VStack(spacing: 16) {
-
-                // Parent hierarchy: Power + (revealed) Fan
+                // Parent: Power + Fan (matches your PowerFanGroup API)
                 PowerFanGroup(
                     isOn: isPowerOn,
                     speed: fanSpeed,
@@ -31,10 +32,10 @@ struct ControlsCard: View {
                     onChangeSpeed: onChangeFanSpeed
                 )
 
-                // Child hierarchy: Scents (nested sub-card)
-                ChildCard(title: "Scents", trailing: childExpandButton) {
+                // Child: Scents
+                ChildCard(title: "Scents", trailing: { childExpandButton }) {
                     VStack(spacing: 16) {
-                        // hue chips row
+                        // Hue chips row; 3-state is handled in vm.toggle(name)
                         HueCircles(
                             names: names,
                             colorDict: colorDict,
@@ -44,35 +45,43 @@ struct ControlsCard: View {
                             onTap: onTapHue
                         )
 
-                        // single slider (collapsed)
+                        // Collapsed: single slider for focused scent
                         if !isExpanded, let f = focusedName {
+                            // Build a lightweight Scent for the control's label/color
+                            let focusedScent = Scent(
+                                name: f,
+                                color: colorDict[f] ?? .gray,
+                                defaultIntensity: 0
+                            )
+
+                            // Bridge current effective value <-> callback as a Binding<Double>
+                            let binding = Binding<Double>(
+                                get: { opacities[f] ?? 0 },
+                                set: { onChangeOpacity(f, $0) }
+                            )
+
                             OpacityControl(
-                                focusedName: f,
-                                isFocusedIncluded: included.contains(f),
-                                value: opacities[f] ?? 0,
-                                onChange: { name, sliderVal in
-                                    onChangeOpacity(name, sliderVal)
-                                }
+                                focused: focusedScent,
+                                value: binding
                             )
                         }
 
-                        // Expanded per-scent rows
+                        // Expanded: per-scent rows with sliders
                         if isExpanded {
-                            VStack(spacing: 12) {
+                            VStack(spacing: 10) {
                                 ForEach(names.filter { included.contains($0) }, id: \.self) { name in
                                     ColorRow(
                                         name: name,
                                         color: colorDict[name] ?? .gray,
-                                        value: displayed(from: opacities[name] ?? 0),
-                                        onChange: { newDisplayed in
+                                        displayed: displayed(from: opacities[name] ?? 0),
+                                        onChangeDisplayed: { newDisplayed in
                                             let applied = newDisplayed * AppConfig.maxIntensity
                                             onChangeOpacity(name, applied)
                                         },
-                                        onTapChip: { onTapHue(name) }
+                                        onFocusOrToggle: { onTapHue(name) }
                                     )
                                 }
                             }
-                            .transition(.opacity.combined(with: .move(edge: .top)))
                         }
                     }
                 }
@@ -86,7 +95,8 @@ struct ControlsCard: View {
                 isExpanded.toggle()
             }
         } label: {
-            Label(isExpanded ? "Collapse" : "Expand", systemImage: isExpanded ? "chevron.up" : "chevron.down")
+            Label(isExpanded ? "Collapse" : "Expand",
+                  systemImage: isExpanded ? "chevron.up" : "chevron.down")
                 .labelStyle(.iconOnly)
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.secondary)
@@ -95,79 +105,77 @@ struct ControlsCard: View {
     }
 
     private func displayed(from effective: Double) -> Double {
+        // Convert stored effective (0...maxIntensity) to slider percent (0...1)
         let maxI = max(0.0001, AppConfig.maxIntensity)
         return min(1.0, max(0.0, effective / maxI))
     }
 }
 
 // MARK: - Nested “child card” shell
-private struct ChildCard<Content: View>: View {
+private struct ChildCard<Content: View, Trailing: View>: View {
     let title: String
-    let trailing: AnyView?
-    let content: () -> Content
+    private let trailingBuilder: () -> Trailing
+    @ViewBuilder var content: Content
 
-    init(title: String, trailing: some View = EmptyView(), @ViewBuilder content: @escaping () -> Content) {
+    init(
+        title: String,
+        @ViewBuilder trailing: @escaping () -> Trailing = { EmptyView() },
+        @ViewBuilder content: () -> Content
+    ) {
         self.title = title
-        self.trailing = AnyView(trailing)
-        self.content = content
+        self.trailingBuilder = trailing
+        self.content = content()
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 8) {
+        VStack(spacing: 12) {
+            HStack {
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.headline)
                 Spacer()
-                trailing
+                trailingBuilder()
             }
-
-            content()
+            content
         }
-        .padding(14)
+        .padding(12)
         .adaptiveGlassBackground(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(.white.opacity(0.14), lineWidth: 0.7)
+                .stroke(.white.opacity(0.12), lineWidth: 0.7)
                 .blendMode(.overlay)
         )
     }
 }
 
-// MARK: - One row for an included scent (chip + slider + %)
+// MARK: - Expanded rows
 private struct ColorRow: View {
     let name: String
     let color: Color
-    @State var value: Double // 0...1
-    let onChange: (Double) -> Void
-    let onTapChip: () -> Void
+    /// 0...1 displayed percent
+    let displayed: Double
+    let onChangeDisplayed: (Double) -> Void
+    let onFocusOrToggle: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
-            // Chip (tap to toggle/remove/focus via VM rules)
-            Button(action: onTapChip) {
+            Button(action: onFocusOrToggle) {
                 Circle()
                     .fill(color)
-                    .frame(width: 28, height: 28)
-                    .overlay(Circle().stroke(.white.opacity(0.22), lineWidth: 0.8).blendMode(.overlay))
-                    .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+                    .frame(width: 22, height: 22)
+                    .overlay(Circle().stroke(.white.opacity(0.3), lineWidth: 1))
             }
             .buttonStyle(.plain)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text("\(name) Scent")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
+            Text(name)
+                .font(.callout)
+                .frame(width: 90, alignment: .leading)
 
-                Slider(value: Binding(
-                    get: { value },
-                    set: { newVal in
-                        value = newVal
-                        onChange(newVal)
-                    }
-                ), in: 0...1)
-            }
+            Slider(value: Binding(
+                get: { displayed },
+                set: { onChangeDisplayed($0) }
+            ), in: 0...1)
 
-            Text(String(format: "%.0f%%", (value * 100).rounded()))
+            Text("\(Int(displayed * 100))%")
                 .font(.footnote.monospacedDigit())
                 .frame(width: 44, alignment: .trailing)
                 .foregroundStyle(.secondary)

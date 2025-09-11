@@ -1,18 +1,17 @@
 import SwiftUI
 
-/// Global UI/config constants for the whole app.
+/// Global configuration & design tokens.
 enum AppConfig {
-    // MARK: - Scents
-    /// Max number of simultaneously selected scents (chips).
+    // MARK: - Mix rules
     static let maxSelected: Int = 6
-
-    // MARK: - Intensity
-    /// Upper bound for a single scent's effective intensity (0...1).
-    /// Keep this a `var` so you can experiment at runtime if needed.
     static var maxIntensity: Double = 0.5
-    static let minIntensity: Double = 0
+    static let minIntensity: Double = 0.0
 
-    // MARK: - Animations (tweak as desired)
+    // MARK: - Device
+    static let fanRange: ClosedRange<Double> = 0.0...1.0
+    static let defaultFanSpeed: Double = 0.35
+
+    // MARK: - Animations
     static let springResponse: Double = 0.35
     static let springDamping: Double = 0.9
 }

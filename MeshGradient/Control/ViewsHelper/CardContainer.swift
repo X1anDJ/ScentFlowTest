@@ -1,43 +1,39 @@
-//  CardContainer.swift
-//  MeshGradient
-//
-//  Created by Dajun Xian on 9/5/25.
-//
-
 import SwiftUI
 
-struct CardContainer<Content: View>: View {
+/// Reusable glass card with a title row and optional trailing actions.
+/// Works with both explicit and omitted `trailing:` uses.
+struct CardContainer<Content: View, Trailing: View>: View {
     let title: String
-    let trailing: AnyView?
-    let content: () -> Content
+    private let trailingBuilder: () -> Trailing
+    private let contentBuilder: () -> Content
 
-    init(title: String, trailing: some View = EmptyView(), @ViewBuilder content: @escaping () -> Content) {
+    init(
+        title: String,
+        @ViewBuilder trailing: @escaping () -> Trailing = { EmptyView() },
+        @ViewBuilder content: @escaping () -> Content
+    ) {
         self.title = title
-        self.trailing = AnyView(trailing)
-        self.content = content
+        self.trailingBuilder = trailing
+        self.contentBuilder = content
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(spacing: 12) {
             HStack {
                 Text(title)
                     .font(.headline)
                 Spacer()
-                trailing
+                trailingBuilder()
             }
-
-            content()
+            contentBuilder()
         }
         .padding(16)
-        // Glass (iOS 26+) or ultraThinMaterial fallback in a rounded rect
         .adaptiveGlassBackground(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        // Keep your subtle edge highlight
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(.white.opacity(0.18), lineWidth: 0.8)
                 .blendMode(.overlay)
         )
-        // Original shadow
         .shadow(color: .black.opacity(0.18), radius: 18, x: 0, y: 10)
     }
 }

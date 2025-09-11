@@ -1,18 +1,19 @@
 import SwiftUI
 
-/// 0 colors -> GlassyCircle
-/// >=1      -> Mesh (if 1 color, caller passes [color, .white])
+/// 0 colors -> nothing
+/// >=1      -> Mesh (if 1 color, caller should pass [color, .white] to enrich)
 struct MeshColorCircle: View {
     let colors: [Color]
-    @State private var isAnimating = false
-    
+    @State private var isAnimating = false  // ✅ original toggle-based animation
+
     var body: some View {
         ZStack {
             if colors.isEmpty {
-//                GlassyCircle()
+                Color.clear // you removed GlassyCircle; keep empty
             } else {
                 MeshDisk(colors: colors, isAnimating: isAnimating)
                     .onAppear {
+                        // ✅ original easing/duration behavior
                         withAnimation(.easeInOut(duration: 5).repeatForever(autoreverses: true)) {
                             isAnimating.toggle()
                         }
@@ -26,7 +27,7 @@ struct MeshColorCircle: View {
 private struct MeshDisk: View {
     let colors: [Color]
     var isAnimating: Bool
-    
+
     var body: some View {
         GeometryReader { geo in
             let side = min(geo.size.width, geo.size.height)
@@ -57,7 +58,7 @@ private struct MeshDisk: View {
         }
         .aspectRatio(1, contentMode: .fit)
     }
-    
+
     private func animatedPoints(isAnimating: Bool) -> [SIMD2<Float>] {
         [
             SIMD2<Float>(0.0, 0.0), SIMD2<Float>(0.5, 0.0), SIMD2<Float>(1.0, 0.0),
@@ -65,7 +66,7 @@ private struct MeshDisk: View {
             SIMD2<Float>(0.0, 1.0), SIMD2<Float>(0.5, 1.0), SIMD2<Float>(1.0, 1.0)
         ]
     }
-    
+
     private func meshColors(from selected: [Color]) -> [Color] {
         var out: [Color] = []
         out.reserveCapacity(9)
@@ -79,7 +80,7 @@ private struct CanvasMeshFallback: View {
     let colors: [Color]
     var isAnimating: Bool
     private let lobeRadiusScale: CGFloat = 0.55
-    
+
     var body: some View {
         GeometryReader { geo in
             let side = min(geo.size.width, geo.size.height)
@@ -107,7 +108,7 @@ private struct CanvasMeshFallback: View {
             }
         }
     }
-    
+
     private func fallbackPoints(in rect: CGRect, isAnimating: Bool) -> [CGPoint] {
         let raw: [SIMD2<Float>] = [
             SIMD2<Float>(0.0, 0.0), SIMD2<Float>(0.5, 0.0), SIMD2<Float>(1.0, 0.0),

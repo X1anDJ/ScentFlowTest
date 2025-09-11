@@ -4,50 +4,46 @@ import SwiftUI
 struct GradientContainerCircle: View {
     let colors: [Color]
     private let rimWidth: CGFloat = 8
-    
+
     var body: some View {
         ZStack {
             GlassRing(width: rimWidth)
                 .accessibilityHidden(true)
-                .glassEffect(.clear)
-            
+                .glassEffect(.clear) // iOS 26 look
+
             // Inner gradient disk
             MeshColorCircle(colors: colors)
                 .padding(rimWidth) // inset inside the rim
         }
+        .aspectRatio(1, contentMode: .fit)
     }
 }
 
 /// Liquid-glass styled circular ring.
-/// Uses materials + highlights so it works on current SDKs (no .glassEffect required).
 private struct GlassRing: View {
     let width: CGFloat
-    
+
     var body: some View {
         GeometryReader { geo in
             let side = min(geo.size.width, geo.size.height)
             let shape = Circle()
-            
+
             ZStack {
-                // Base translucent ring
                 shape
                     .strokeBorder(.ultraThinMaterial, lineWidth: width)
                     .overlay(
-                        // Outer soft rim highlight
                         shape
                             .strokeBorder(Color.white.opacity(0.28), lineWidth: 1)
                             .blur(radius: 0.6)
                             .blendMode(.overlay)
                     )
                     .overlay(
-                        // Inner soft rim shadow
                         shape
                             .inset(by: width - 1)
                             .strokeBorder(Color.black.opacity(0.18), lineWidth: 1)
                             .blur(radius: 0.6)
                     )
                     .overlay(
-                        // Directional sheen across the ring
                         shape
                             .strokeBorder(LinearGradient(
                                 colors: [
@@ -65,17 +61,13 @@ private struct GlassRing: View {
                     .shadow(color: .black.opacity(0.06), radius: 6, x: 0, y: 2)
             }
             .frame(width: side, height: side)
-            
         }
         .aspectRatio(1, contentMode: .fit)
     }
 }
 
-
-//Preview
-
-struct GlassRing_Previews: PreviewProvider {
-    static var previews: some View {
-        GlassRing(width: 10)
-    }
+#Preview {
+    GlassRing(width: 10)
+        .padding()
+        .preferredColorScheme(.dark)
 }
