@@ -8,19 +8,20 @@ struct PowerFanGroup: View {
     let onChangeSpeed: (Double) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        HStack(spacing: 14) {
             // Power button
             Button(action: onToggle) {
                 HStack(spacing: 10) {
                     Image(systemName: isOn ? "power.circle.fill" : "power")
                         .font(.system(size: 20, weight: .semibold))
-                    Text(isOn ? "Device On" : "Device Off")
+                    Text(isOn ? "On" : "Off")
                         .font(.subheadline)
                 }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.glass)
             .controlSize(.regular)
 
+            // Fan slider group
             if isOn {
                 HStack(spacing: 10) {
                     Image(systemName: "fan")
@@ -28,21 +29,29 @@ struct PowerFanGroup: View {
                         .frame(width: 24, alignment: .center)
                         .accessibilityHidden(true)
 
-                    Slider(value: Binding(
-                        get: { speed },
-                        set: { onChangeSpeed(min(1, max(0, $0))) }
-                    ), in: 0...1)
+                    Slider(
+                        value: Binding(
+                            get: { speed },
+                            set: { onChangeSpeed(min(1, max(0, $0))) }
+                        ),
+                        in: 0...1
+                    )
                     .accessibilityLabel("Fan speed")
+                    .sliderTintGray()   // your grayer-than-global tint
 
                     Text("\(Int(speed * 100))%")
                         .font(.footnote.monospacedDigit())
                         .frame(width: 44, alignment: .trailing)
                         .foregroundStyle(.secondary)
                 }
-                .padding(.leading, 12)
-                .transition(.opacity.combined(with: .move(edge: .top)))
+                // ⬇️ Horizontal appear/disappear + fade
+                .transition(
+                    .move(edge: .trailing).combined(with: .opacity)
+                )
             }
         }
+        // Ensure the transition actually animates when `isOn` changes
+        .animation(.spring(response: 0.35, dampingFraction: 0.9), value: isOn)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Power and fan controls")
     }

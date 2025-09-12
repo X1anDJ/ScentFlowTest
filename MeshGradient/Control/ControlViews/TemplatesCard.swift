@@ -28,7 +28,7 @@ struct TemplatesCard: View {
                     Label("Save", systemImage: "plus.circle.fill")
                         .labelStyle(.titleAndIcon)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glass)
                 .controlSize(.small)
             }
         } content: {

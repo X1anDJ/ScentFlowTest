@@ -23,6 +23,7 @@ struct ControlsCard: View {
     var body: some View {
         // Use explicit trailing builder so generics always infer
         CardContainer(title: "Controls", trailing: { EmptyView() }) {
+            Divider().opacity(0.6)
             VStack(spacing: 16) {
                 // Parent: Power + Fan (matches your PowerFanGroup API)
                 PowerFanGroup(
@@ -69,6 +70,12 @@ struct ControlsCard: View {
                         // Expanded: per-scent rows with sliders
                         if isExpanded {
                             VStack(spacing: 10) {
+//                                HStack {
+//                                    Text("Active Scents")
+//                                        .font(Font.caption)
+//                                    Spacer()
+//                                }
+                            
                                 ForEach(names.filter { included.contains($0) }, id: \.self) { name in
                                     ColorRow(
                                         name: name,
@@ -157,7 +164,7 @@ private struct ColorRow: View {
     let onFocusOrToggle: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 8) {
             Button(action: onFocusOrToggle) {
                 Circle()
                     .fill(color)
@@ -166,7 +173,7 @@ private struct ColorRow: View {
             }
             .buttonStyle(.plain)
 
-            Text(name)
+            Text(name + " Scent")
                 .font(.callout)
                 .frame(width: 90, alignment: .leading)
 
@@ -174,6 +181,8 @@ private struct ColorRow: View {
                 get: { displayed },
                 set: { onChangeDisplayed($0) }
             ), in: 0...1)
+            .sliderTintGray()
+            
 
             Text("\(Int(displayed * 100))%")
                 .font(.footnote.monospacedDigit())
@@ -183,10 +192,10 @@ private struct ColorRow: View {
         .padding(.horizontal, 4)
         .padding(.vertical, 6)
         .adaptiveGlassBackground(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(.white.opacity(0.12), lineWidth: 0.7)
-                .blendMode(.overlay)
-        )
+//        .overlay(
+//            RoundedRectangle(cornerRadius: 10, style: .continuous)
+//                .stroke(.white.opacity(0.12), lineWidth: 0.7)
+//                .blendMode(.overlay)
+//        )
     }
 }

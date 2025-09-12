@@ -29,11 +29,7 @@ struct CardContainer<Content: View, Trailing: View>: View {
         }
         .padding(16)
         .adaptiveGlassBackground(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(.white.opacity(0.18), lineWidth: 0.8)
-                .blendMode(.overlay)
-        )
+
         .shadow(color: .black.opacity(0.18), radius: 18, x: 0, y: 10)
     }
 }

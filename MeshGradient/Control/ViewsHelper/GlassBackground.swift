@@ -16,7 +16,7 @@ struct AdaptiveGlassBackground<S: Shape>: ViewModifier {
         #if os(iOS)
         if #available(iOS 26.0, *) {
             // Your desired effect on iOS 26+
-            content.glassEffect(.clear, in: shape)
+            content.glassEffect(.regular, in: shape)
         } else {
             // Earlier iOS: approximate with material
             content.background(.ultraThinMaterial, in: shape)

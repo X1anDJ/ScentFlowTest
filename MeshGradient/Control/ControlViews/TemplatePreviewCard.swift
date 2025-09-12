@@ -1,6 +1,7 @@
 import SwiftUI
 
 /// Small visual card that previews a saved template using your wheel renderer.
+/// Now uses a **static mesh** (no animation) so gallery items don't animate.
 struct TemplatePreviewCard: View {
     let template: ColorTemplate
     let names: [String]
@@ -15,7 +16,8 @@ struct TemplatePreviewCard: View {
         )
 
         return VStack(spacing: 8) {
-            GradientContainerCircle(colors: palette)
+            // ⬇️ Static preview (animate: false)
+            GradientContainerCircle(colors: palette, animate: false)
                 .frame(width: 80, height: 80)
 
             Text(template.name)
