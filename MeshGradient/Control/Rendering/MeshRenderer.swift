@@ -31,22 +31,12 @@ struct DefaultMeshRenderer: MeshRenderer {
             }
 
         func withAlpha(_ c: Color, _ a: Double) -> Color {
-            #if canImport(UIKit)
             let ui = UIColor(c)
             var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, oldA: CGFloat = 0
             if ui.getRed(&r, green: &g, blue:&b, alpha:&oldA) {
                 return Color(.sRGB, red: Double(r), green: Double(g), blue: Double(b), opacity: a / maxI)
             }
             return c.opacity(a / maxI)
-            #elseif canImport(AppKit)
-            let ns = NSColor(c)
-            guard let s = ns.usingColorSpace(.sRGB) else { return c.opacity(a / maxI) }
-            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, oldA: CGFloat = 0
-            s.getRed(&r, green: &g, blue: &b, alpha: &oldA)
-            return Color(.sRGB, red: Double(r), green: Double(g), blue: Double(b), opacity: a / maxI)
-            #else
-            return c.opacity(a / maxI)
-            #endif
         }
 
         var stops = entries.map { withAlpha($0.0, $0.1) }
@@ -54,7 +44,7 @@ struct DefaultMeshRenderer: MeshRenderer {
 
         switch stops.count {
         case 0: return []
-        case 1: return [stops[0], stops[0], .white.opacity(0.001)]
+        case 1: return [stops[0].opacity(0.5), stops[0], stops[0].opacity(0.7)]
         case 2: return [stops[0], stops[1], stops[0]]
         default: return stops
         }

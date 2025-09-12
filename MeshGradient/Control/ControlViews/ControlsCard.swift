@@ -34,7 +34,7 @@ struct ControlsCard: View {
                 )
 
                 // Child: Scents
-                ChildCard(title: "Scents", trailing: { childExpandButton }) {
+                ChildCard(title: "Pods", trailing: { childExpandButton }) {
                     VStack(spacing: 16) {
                         // Hue chips row; 3-state is handled in vm.toggle(name)
                         HueCircles(
@@ -68,7 +68,7 @@ struct ControlsCard: View {
                         }
 
                         // Expanded: per-scent rows with sliders
-                        if isExpanded {
+                        if isExpanded && !included.isEmpty {
                             VStack(spacing: 10) {
 //                                HStack {
 //                                    Text("Active Scents")
@@ -154,48 +154,3 @@ private struct ChildCard<Content: View, Trailing: View>: View {
     }
 }
 
-// MARK: - Expanded rows
-private struct ColorRow: View {
-    let name: String
-    let color: Color
-    /// 0...1 displayed percent
-    let displayed: Double
-    let onChangeDisplayed: (Double) -> Void
-    let onFocusOrToggle: () -> Void
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Button(action: onFocusOrToggle) {
-                Circle()
-                    .fill(color)
-                    .frame(width: 22, height: 22)
-                    .overlay(Circle().stroke(.white.opacity(0.3), lineWidth: 1))
-            }
-            .buttonStyle(.plain)
-
-            Text(name + " Scent")
-                .font(.callout)
-                .frame(width: 90, alignment: .leading)
-
-            Slider(value: Binding(
-                get: { displayed },
-                set: { onChangeDisplayed($0) }
-            ), in: 0...1)
-            .sliderTintGray()
-            
-
-            Text("\(Int(displayed * 100))%")
-                .font(.footnote.monospacedDigit())
-                .frame(width: 44, alignment: .trailing)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 6)
-        .adaptiveGlassBackground(RoundedRectangle(cornerRadius: 10, style: .continuous))
-//        .overlay(
-//            RoundedRectangle(cornerRadius: 10, style: .continuous)
-//                .stroke(.white.opacity(0.12), lineWidth: 0.7)
-//                .blendMode(.overlay)
-//        )
-    }
-}

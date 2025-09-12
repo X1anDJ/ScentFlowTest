@@ -1,11 +1,6 @@
 import SwiftUI
-
-#if canImport(UIKit)
 import UIKit
-#endif
-#if canImport(AppKit)
-import AppKit
-#endif
+
 
 /// A circular container with a liquid-glass rim that holds the mesh gradient.
 /// Optimized: reduced overdraw on the ring; animation handled inside MeshColorCircle.
@@ -39,7 +34,6 @@ struct GradientContainerCircle: View {
     /// Multiplies each color's alpha by `factor`, clamped to [0, 1].
     private func scaleAlphas(_ colors: [Color], by factor: Double) -> [Color] {
         colors.map { c in
-            #if canImport(UIKit)
             let ui = UIColor(c)
             var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 1
             if ui.getRed(&r, green: &g, blue: &b, alpha: &a) {
@@ -48,17 +42,6 @@ struct GradientContainerCircle: View {
             } else {
                 return c // fallback (keep as-is)
             }
-            #elseif canImport(AppKit)
-            let ns = NSColor(c)
-            guard let s = ns.usingColorSpace(.sRGB) else { return c }
-            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 1
-            s.getRed(&r, green: &g, blue: &b, alpha: &a)
-            let na = min(1.0, max(0.0, Double(a) * factor))
-            return Color(.sRGB, red: Double(r), green: Double(g), blue: Double(b), opacity: na)
-            #else
-            // Platforms without UIKit/AppKit color extraction — leave unchanged
-            return c
-            #endif
         }
     }
 }

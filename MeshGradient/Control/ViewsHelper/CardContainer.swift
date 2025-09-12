@@ -30,6 +30,6 @@ struct CardContainer<Content: View, Trailing: View>: View {
         .padding(16)
         .adaptiveGlassBackground(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
-        .shadow(color: .black.opacity(0.18), radius: 18, x: 0, y: 10)
+        .shadow(color: .black.opacity(0.1), radius: 12, x: 0, y: 10)
     }
 }

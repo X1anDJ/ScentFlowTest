@@ -40,7 +40,7 @@ final class DevicesStore: ObservableObject {
         let defaults: [DeviceProfile] = [
             DeviceProfile(name: "Livingroom Hub",
                           isMock: false,
-                          settings: .init(isPowerOn: true, fanSpeed: 0.5)),
+                          settings: .init(isPowerOn: false, fanSpeed: 0)),
             DeviceProfile(name: "Mock Device",
                           isMock: true,
                           settings: .init(isPowerOn: false, fanSpeed: 0.3))

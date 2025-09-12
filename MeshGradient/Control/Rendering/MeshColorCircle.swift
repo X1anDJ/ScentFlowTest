@@ -52,7 +52,7 @@ private struct MeshDisk: View {
                                 points: animatedPoints(midX: Float(midX)),
                                 colors: meshColors(from: colors),
                                 smoothsColors: true,
-                                colorSpace: .perceptual
+                                colorSpace: .device
                             )
                         )
                 } else {

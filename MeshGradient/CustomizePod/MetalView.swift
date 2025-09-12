@@ -11,7 +11,7 @@ struct MetalView: UIViewRepresentable {
         v.framebufferOnly = false
         v.enableSetNeedsDisplay = false
         v.isPaused = false
-        v.preferredFramesPerSecond = 60
+        v.preferredFramesPerSecond = 30
 
         let r = Renderer(mtkView: v)
         r.uiParams = params

@@ -15,6 +15,9 @@ struct MixingScreen: View {
     @State private var intensities:  [Double] = Array(repeating: 1.0,   count: 6)
     @State private var scentNames:   [String] = (1...6).map { "Scent \($0)" }
 
+    // For color picking via the row's circle button
+    @State private var colorPickerIndex: Int? = nil
+
     // ===== Shader params =====
     private var shaderParams: ShaderParams {
         var p = ShaderParams()
@@ -58,13 +61,9 @@ struct MixingScreen: View {
                     .clipShape(Circle())
                     .compositingGroup()
 
-                // Clear glass discs (iOS 26+) or material fallback
+                // Clear glass disc (iOS 26+) or material fallback
                 glassCircle(ballSize)
                     .allowsHitTesting(false)
-
-                glassCircle(ballSize * 0.4)
-                    .allowsHitTesting(false)
-                    .shadow(radius: 0)
             }
             .shadow(color: .black.opacity(0.12), radius: 24, x: 0, y: 10)
             .frame(maxWidth: .infinity)
@@ -93,22 +92,47 @@ struct MixingScreen: View {
                         // Target scale: step -0.7 (down to 1.0)
                         let minScale = 1.0
                         scale = max(scale - 0.7, minScale)
+                    },
+                    onTapRowCircle: { i in
+                        colorPickerIndex = i
                     }
                 )
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 4)
 
             // ===== 3) Order Scent (native glass button) =====
             GlassOrderButton(title: "Order Scent", systemImage: "bag.fill") {
                 // TODO: start order flow
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 32)
+        }
+        // Single sheet for color picking, triggered by the row’s circle button.
+        .sheet(isPresented: Binding(
+            get: { colorPickerIndex != nil },
+            set: { if !$0 { colorPickerIndex = nil } }
+        )) {
+            let i = colorPickerIndex ?? 0
+            NavigationStack {
+                Form {
+                    Section(header: Text(scentNames[i])) {
+                        ColorPicker("Color", selection: Binding(
+                            get: { colorPickers[i] },
+                            set: { colorPickers[i] = $0 }
+                        ))
+                    }
+                }
+                .navigationTitle("Pick Color")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Done") { colorPickerIndex = nil }
+                    }
+                }
+            }
         }
     }
 }
 
-// MARK: - Extracted panel content (design/logic unchanged; no background/padding here)
+// MARK: - Extracted panel content (design/logic unchanged; now reuses ColorRow)
 private struct MixingPanelContent: View {
     @Binding var activeColors: Int
     @Binding var colorPickers: [Color]
@@ -124,6 +148,7 @@ private struct MixingPanelContent: View {
 
     var onAddedScent: (_ newIndex: Int) -> Void
     var onRemovedScent: () -> Void
+    var onTapRowCircle: (_ index: Int) -> Void
 
     @State private var isScentsOpen = false
     @State private var selectedCategory: Category? = nil
@@ -140,13 +165,12 @@ private struct MixingPanelContent: View {
                         categoriesGrid()
                     }
                 }
-                .padding(.top, 10) // breathing room
+                .padding(.top, 10)
             } label: {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack {
                         Text("Add Scents")
                             .font(.headline)
-                            .foregroundStyle(Color.black)
                         Spacer()
                         if isScentsOpen, let cat = selectedCategory {
                             Text(cat.displayName)
@@ -167,7 +191,7 @@ private struct MixingPanelContent: View {
             .background(.thinMaterial, in: innerShape)
             .overlay(innerShape.strokeBorder(Color.white.opacity(0.12), lineWidth: 0.8))
 
-            // ===== Current Scents =====
+            // ===== Current Scents (REUSES ColorRow) =====
             VStack(alignment: .leading, spacing: 10) {
                 Text("Scents")
                     .font(.subheadline)
@@ -175,7 +199,17 @@ private struct MixingPanelContent: View {
 
                 VStack(spacing: 10) {
                     ForEach(0..<activeColors, id: \.self) { i in
-                        scentRow(index: i)
+                        ColorRow(
+                            name: scentNames[i],
+                            color: colorPickers[i],
+                            displayed: intensities[i],
+                            onChangeDisplayed: { intensities[i] = $0 },
+                            onFocusOrToggle: { onTapRowCircle(i) },
+                            onRemove: {
+                                removeScent(at: i)
+                                onRemovedScent()
+                            }
+                        )
                     }
                 }
             }
@@ -239,7 +273,6 @@ private struct MixingPanelContent: View {
         }
     }
 
-    // Grid of top-level categories
     private func categoriesGrid() -> some View {
         let cols = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
         return LazyVGrid(columns: cols, spacing: 14) {
@@ -259,7 +292,6 @@ private struct MixingPanelContent: View {
         }
     }
 
-    // Sub-options for a category
     private func categorySubOptionsGrid(for cat: Category) -> some View {
         let cols = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
         return LazyVGrid(columns: cols, spacing: 14) {
@@ -322,65 +354,11 @@ private struct MixingPanelContent: View {
         .frame(width: 44, height: 44)
     }
 
-    private func scentRow(index i: Int) -> some View {
-        let rowShape = RoundedRectangle(cornerRadius: 14, style: .continuous)
-        return HStack(spacing: 12) {
-            // Color swatch (tappable to pick color)
-            ZStack {
-                Circle().fill(colorPickers[i].opacity(0.65))
-                Circle().strokeBorder(.white.opacity(0.5), lineWidth: 1)
-            }
-            .frame(width: 30, height: 30)
-            .overlay(
-                ColorPicker("", selection: Binding(
-                    get: { colorPickers[i] },
-                    set: { colorPickers[i] = $0 }
-                ))
-                .labelsHidden()
-                .opacity(0.01) // invisible touch target
-            )
-
-            // Name
-            TextField("Name", text: Binding(
-                get: { scentNames[i] },
-                set: { scentNames[i] = $0 }
-            ))
-            .textFieldStyle(.roundedBorder)
-            .frame(minWidth: 80)
-
-            // Intensity slider
-            VStack(alignment: .leading) {
-                HStack {
-                    Text("Intensity")
-                    Spacer()
-                    Text("\(Int(intensities[i] * 100))%")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Slider(value: Binding(
-                    get: { intensities[i] },
-                    set: { intensities[i] = $0 }
-                ), in: 0...1)
-            }
-
-            // Remove
-            Button(role: .destructive) {
-                removeScent(at: i)
-                onRemovedScent()
-            } label: {
-                Image(systemName: "trash")
-            }
-        }
-        .padding(10)
-        .background(.thinMaterial, in: rowShape)
-        .overlay(rowShape.strokeBorder(Color.white.opacity(0.12), lineWidth: 0.8))
-    }
-
     // Reusable bits
     private func slider(_ title: String, value: Binding<Double>, range: ClosedRange<Double>) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(_titleCase(title))
+                Text(title)
                 Spacer()
                 Text(String(format: "%.2f", value.wrappedValue))
                     .font(.caption).foregroundStyle(.secondary).monospacedDigit()
@@ -391,11 +369,6 @@ private struct MixingPanelContent: View {
     private func label(_ text: String, systemImage: String) -> some View {
         HStack(spacing: 8) { Image(systemName: systemImage); Text(text) }
     }
-
-    private func _titleCase(_ s: String) -> String {
-        // Keep the incoming text as-is (tiny helper available if needed later)
-        return s
-    }
 }
 
 // MARK: - Glass Order Button (native Button with iOS 26 glass effect)
@@ -405,7 +378,7 @@ private struct GlassOrderButton: View {
     let action: () -> Void
 
     var body: some View {
-        let shape = Capsule(style: .continuous)
+       // let shape = Capsule(style: .continuous)
         Button(action: action) {
             HStack(spacing: 8) {
                 Image(systemName: systemImage).font(.headline)
@@ -414,16 +387,7 @@ private struct GlassOrderButton: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
         }
-        .buttonStyle(.bordered)
-        .clipShape(shape)
-        .overlay(shape.strokeBorder(.white.opacity(0.15), lineWidth: 0.8))
-        .background {
-            if #available(iOS 26.0, *) {
-                shape.fill(.clear).glassEffect(.clear)
-            } else {
-                shape.fill(.ultraThinMaterial)
-            }
-        }
+        .buttonStyle(.glass)
     }
 }
 

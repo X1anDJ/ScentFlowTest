@@ -16,7 +16,7 @@ struct ExplorePage: View {
                 // Card 1: Customize Pod
                 CardContainer(title: "Customize Pod") {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("All scents in one pod")
+                        Text("Unique scent just for you")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
 
@@ -25,13 +25,11 @@ struct ExplorePage: View {
                         } label: {
                             HStack {
                                 Spacer()
-                                Text("Open").fontWeight(.semibold)
+                                Text("Create").fontWeight(.semibold)
                                 Spacer()
                             }
-                            .padding(.vertical, 12)
-                            .background(Color.accentColor.opacity(0.12), in: Capsule())
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.glass)
                     }
                 }
 

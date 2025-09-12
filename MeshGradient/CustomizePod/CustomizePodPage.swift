@@ -3,21 +3,19 @@ import SwiftUI
 struct CustomizePodPage: View {
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading) {
-                // Headline under the large nav title
-                Text("All scents in one pod")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    
+            VStack(spacing: 18) {
+//                Text("")
+//                    .font(.subheadline)
+//                    .foregroundStyle(.secondary)
+//                    .padding(.leading)
 
                 // Ball + Mixing panel (inside a Control-like card)
                 MixingScreen()
             }
-            .padding(.horizontal, 4)
-            .padding(.bottom, 16)
+            .padding(.horizontal)
         }
         .background(Color(.systemBackground).ignoresSafeArea())
         .navigationTitle("Customize Pod")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

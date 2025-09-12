@@ -1,14 +1,58 @@
 import SwiftUI
 import Combine
 
+// MARK: - Off-main builder (pure CPU work here)
+actor GradientWheelBuilder {
+    struct Snapshot {
+        let canonicalOrder: [String]
+        let colorDict: [String: Color]
+        let included: Set<String>
+        let opacities: [String: Double]
+        let maxIntensity: Double
+    }
+
+    func makeStops(from s: Snapshot) -> [Color] {
+        let maxI = max(0.0001, s.maxIntensity)
+        let names = s.canonicalOrder.filter { s.included.contains($0) }
+        var stops: [Color] = names.compactMap { n in
+            guard let base = s.colorDict[n] else { return nil }
+            let a = min(s.maxIntensity, max(0, s.opacities[n] ?? 0))
+            return a < 0.01 ? nil : base.opacity(a / maxI)
+        }
+
+        // Ensure visually rich mesh with at least 3 stops
+        if stops.count == 1 {
+            stops.append(contentsOf: [stops[0], stops[0].opacity(0.5)])
+        } else if stops.count == 2 {
+            stops.append(stops[0].opacity(0.5))
+        }
+        return stops
+    }
+}
+
 @MainActor
 final class GradientWheelViewModel: ObservableObject {
     // MARK: - Device (parent controls)
     @Published var isPowerOn: Bool = true
     @Published var fanSpeed: Double = 0.5   // reserved for later use
 
-    func togglePower() { withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) { isPowerOn.toggle() } }
-    func setFanSpeed(_ v: Double) { fanSpeed = max(0, min(1, v)) }
+    func togglePower() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
+            isPowerOn.toggle()
+        }
+        if isPowerOn {
+            scheduleWheelRebuild()
+        } else {
+            // Immediately clear on power-off without heavy work
+            selectedColorsWeighted = []
+        }
+    }
+
+    func setFanSpeed(_ v: Double) {
+        fanSpeed = max(0, min(1, v))
+        // If fan speed influences the gradient, coalesce work:
+        // scheduleWheelRebuild(debounceMillis: 80)
+    }
 
     // MARK: - Scents (existing)
     @Published var colorDict: [String: Color] = [
@@ -30,6 +74,55 @@ final class GradientWheelViewModel: ObservableObject {
 
     var canSelectMore: Bool { included.count < 6 }
 
+    // MARK: - Async wheel output (now stored + published)
+    @Published private(set) var selectedColorsWeighted: [Color] = []
+
+    // MARK: - Private async machinery
+    private var rebuildTask: Task<Void, Never>?
+    private let builder = GradientWheelBuilder()
+
+    deinit { rebuildTask?.cancel() }
+
+    // Debounced off-main rebuild
+    func scheduleWheelRebuild() {
+        rebuildTask?.cancel()
+
+        // Snapshot inputs so the worker runs on immutable data off-main
+        let snap = GradientWheelBuilder.Snapshot(
+            canonicalOrder: canonicalOrder,
+            colorDict: colorDict,
+            included: included,
+            opacities: opacities,
+            maxIntensity: AppConfig.maxIntensity
+        )
+
+        rebuildTask = Task { [weak self] in
+            // Coalesce rapid changes (slider, taps)
+       //     try? await Task.sleep(nanoseconds: UInt64(debounceMillis) * 1_000_000)
+
+            // Heavy work off the main actor
+            let stops = await self?.builder.makeStops(from: snap) ?? []
+
+            if Task.isCancelled { return }
+
+            // Publish to UI with a light animation
+            await MainActor.run {
+                guard let self else { return }
+
+                let wasEmpty = self.selectedColorsWeighted.isEmpty
+                // Re-enable animations for the “come back” moment
+                if wasEmpty && !stops.isEmpty {
+                    withAnimation(.easeInOut(duration: 0.4)) {
+                        self.selectedColorsWeighted = stops
+                    }
+                } else {
+                    self.selectedColorsWeighted = stops
+                }
+            }
+
+        }
+    }
+
     // MARK: - Toggle & intensity
     func toggle(_ name: String) {
         if included.contains(name) {
@@ -49,15 +142,17 @@ final class GradientWheelViewModel: ObservableObject {
             guard canSelectMore else { return }
             included.insert(name)
             focusedName = name
-            // NEW: default intensity to 50% of global cap when a scent is added
+            // default intensity to 50% of global cap when a scent is added
             opacities[name] = AppConfig.maxIntensity * 0.5
         }
+        if isPowerOn { scheduleWheelRebuild() }
     }
 
     func setOpacity(_ value: Double, for name: String) {
         // clamp to global max
         let clamped = max(0.0, min(AppConfig.maxIntensity, value))
         opacities[name] = clamped
+        if isPowerOn { scheduleWheelRebuild() }
     }
 
     // MARK: - Templates
@@ -76,24 +171,7 @@ final class GradientWheelViewModel: ObservableObject {
             out[name] = max(0.0, min(AppConfig.maxIntensity, raw))
         }
         opacities = out
-    }
 
-    // MARK: - Renderer palette
-    var selectedColorsWeighted: [Color] {
-        let maxI = max(0.0001, AppConfig.maxIntensity)
-        let names = canonicalOrder.filter { included.contains($0) }
-        var stops: [Color] = names.compactMap { n in
-            guard let base = colorDict[n] else { return nil }
-            let a = min(AppConfig.maxIntensity, max(0, opacities[n] ?? 0))
-            return a < 0.01 ? nil : base.opacity(a / maxI)
-        }
-
-        // Ensure visually rich mesh with at least 3 stops
-        if stops.count == 1 {
-            stops.append(contentsOf: [stops[0], .white.opacity(0.001)])
-        } else if stops.count == 2 {
-            stops.append(stops[0])
-        }
-        return stops
+        if isPowerOn { scheduleWheelRebuild() }
     }
 }
