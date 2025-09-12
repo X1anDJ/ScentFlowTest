@@ -112,9 +112,7 @@ struct ContentView: View {
 
             // SECOND TAB (placeholder)
             NavigationStack {
-                Text("More coming soon")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .navigationTitle("Explore")
+                ExplorePage()
             }
             .tabItem {
                 Image(systemName: "sparkles")
