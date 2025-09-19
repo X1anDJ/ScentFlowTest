@@ -3,36 +3,26 @@ import SwiftUI
 struct ContentView: View {
     var body: some View {
         TabView {
-            // CONTROL
-            ControlPage()
-                .tabItem {
-                    Image(systemName: "circle.hexagonpath.fill")
-                    Text("Control")
+            Tab("Control", systemImage: "circle.hexagonpath.fill") {
+                NavigationStack {
+                    ControlPage() // root contains a ScrollView
                 }
-
-            // SECOND TAB (placeholder)
-            NavigationStack {
-                ExplorePage()
             }
-            .tabItem {
-                Image(systemName: "sparkles")
-                Text("Explore")
+            Tab("Explore", systemImage: "sparkles") {
+                NavigationStack { ExplorePage() }
             }
-
-            // THIRD TAB (placeholder)
-            NavigationStack {
-                Text("More coming soon")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .navigationTitle("User")
-            }
-            .tabItem {
-                Image(systemName: "person.fill")
-                Text("User")
+            Tab("User", systemImage: "person.fill") {
+                NavigationStack {
+                    Text("More coming soon")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .navigationTitle("User")
+                }
             }
         }
         .tabBarMinimizeBehavior(.onScrollDown)
     }
 }
+
 
 #Preview {
     ContentView().preferredColorScheme(.dark)

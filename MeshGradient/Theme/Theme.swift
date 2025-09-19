@@ -15,17 +15,7 @@ enum Theme {
         static let lightModeTint = Color(.sRGB, white: 0.3, opacity: 1.0)
         /// Dark Mode tint (near-white)
         static let darkModeTint  = Color(.sRGB, white: 0.8, opacity: 1.0)
-//
-//        // Optional: handy gray steps (sRGB)
-//        static let gray100 = Color(.sRGB, white: 0.10, opacity: 1)
-//        static let gray200 = Color(.sRGB, white: 0.20, opacity: 1)
-//        static let gray300 = Color(.sRGB, white: 0.30, opacity: 1)
-//        static let gray400 = Color(.sRGB, white: 0.40, opacity: 1)
-//        static let gray500 = Color(.sRGB, white: 0.50, opacity: 1)
-//        static let gray600 = Color(.sRGB, white: 0.60, opacity: 1)
-//        static let gray700 = Color(.sRGB, white: 0.70, opacity: 1)
-//        static let gray800 = Color(.sRGB, white: 0.80, opacity: 1)
-//        static let gray900 = Color(.sRGB, white: 0.90, opacity: 1)
+
     }
 }
 

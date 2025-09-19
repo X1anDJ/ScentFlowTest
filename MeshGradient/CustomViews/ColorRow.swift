@@ -59,6 +59,6 @@ struct ColorRow: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .adaptiveGlassBackground(RoundedRectangle(cornerRadius: 10, style: .continuous))
+//        .adaptiveGlassBackground(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }

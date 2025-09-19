@@ -51,7 +51,7 @@ struct MixingScreen: View {
     }
 
     var body: some View {
-        let ballSize: CGFloat = 224
+        let ballSize: CGFloat = 216
 
         VStack(spacing: 24) {
             // ===== 1) Ball — MetalView clipped to circle + glass discs =====
@@ -85,13 +85,13 @@ struct MixingScreen: View {
                     onAddedScent: { newIndex in
                         intensities[newIndex] = 1.0
                         // Target scale: step +0.7 (Renderer animates to it over 3s)
-                        let maxScale = 4.0
-                        scale = min(scale + 0.7, maxScale)
+                        let maxScale = 3.5
+                        scale = min(scale + 0.5, maxScale)
                     },
                     onRemovedScent: {
                         // Target scale: step -0.7 (down to 1.0)
                         let minScale = 1.0
-                        scale = max(scale - 0.7, minScale)
+                        scale = max(scale - 0.5, minScale)
                     },
                     onTapRowCircle: { i in
                         colorPickerIndex = i
@@ -189,7 +189,7 @@ private struct MixingPanelContent: View {
             }
             .padding(12)
             .background(.thinMaterial, in: innerShape)
-            .overlay(innerShape.strokeBorder(Color.white.opacity(0.12), lineWidth: 0.8))
+            //.overlay(innerShape.strokeBorder(Color.white.opacity(0.12), lineWidth: 0.8))
 
             // ===== Current Scents (REUSES ColorRow) =====
             VStack(alignment: .leading, spacing: 10) {
@@ -348,10 +348,12 @@ private struct MixingPanelContent: View {
 
     private func solidSwatch(tint: Color) -> some View {
         ZStack {
-            Circle().fill(tint.opacity(0.25))
-            Circle().stroke(tint.opacity(0.8), lineWidth: 1.4)
+            Circle().fill(tint.opacity(0.7))
+
+            //Circle().stroke(tint.opacity(0.8), lineWidth: 1.4)
         }
         .frame(width: 44, height: 44)
+        
     }
 
     // Reusable bits
@@ -366,6 +368,7 @@ private struct MixingPanelContent: View {
             Slider(value: value, in: range)
         }
     }
+    
     private func label(_ text: String, systemImage: String) -> some View {
         HStack(spacing: 8) { Image(systemName: systemImage); Text(text) }
     }

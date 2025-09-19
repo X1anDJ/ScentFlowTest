@@ -54,7 +54,7 @@ struct HueCircles: View {
                         .overlay(
                             Circle()
                                 .stroke(
-                                    isFocused ? .white.opacity(0.75) : .white.opacity(0.25),
+                                    isFocused ? color.opacity(0.75) : color.opacity(0.25),
                                     lineWidth: isFocused ? 3 : 1
                                 )
                         )

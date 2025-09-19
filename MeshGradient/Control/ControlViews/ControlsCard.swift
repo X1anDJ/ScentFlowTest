@@ -23,7 +23,7 @@ struct ControlsCard: View {
     var body: some View {
         // Use explicit trailing builder so generics always infer
         CardContainer(title: "Controls", trailing: { EmptyView() }) {
-            Divider().opacity(0.6)
+            //Divider().opacity(0.6)
             VStack(spacing: 16) {
                 // Parent: Power + Fan (matches your PowerFanGroup API)
                 PowerFanGroup(

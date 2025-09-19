@@ -60,7 +60,7 @@ private struct GlassRing: View {
                 .overlay(
                     shape.strokeBorder(Color.white.opacity(0.55), lineWidth: 1)
                 )
-                // Inner soft rim shadow (cheap vs. layered blurs)
+                // Inner soft rim shadow
                 .overlay(
                     shape
                         .inset(by: width - 1)
@@ -73,9 +73,9 @@ private struct GlassRing: View {
                         .strokeBorder(
                             LinearGradient(
                                 colors: [
-                                    .white.opacity(0.28),
+                                    .white.opacity(0.58),
                                     .white.opacity(0.06),
-                                    .white.opacity(0.22)
+                                    .white.opacity(0.32)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing

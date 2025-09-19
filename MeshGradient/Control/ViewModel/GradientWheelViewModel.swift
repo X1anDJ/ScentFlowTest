@@ -109,15 +109,18 @@ final class GradientWheelViewModel: ObservableObject {
             await MainActor.run {
                 guard let self else { return }
 
-                let wasEmpty = self.selectedColorsWeighted.isEmpty
-                // Re-enable animations for the “come back” moment
-                if wasEmpty && !stops.isEmpty {
-                    withAnimation(.easeInOut(duration: 0.4)) {
-                        self.selectedColorsWeighted = stops
-                    }
-                } else {
+                withAnimation(.easeInOut(duration: 1.0)) {
                     self.selectedColorsWeighted = stops
                 }
+//                let wasEmpty = self.selectedColorsWeighted.isEmpty
+//                // Re-enable animations for the “come back” moment
+//                if wasEmpty && !stops.isEmpty {
+//                    withAnimation(.easeInOut(duration: 1.0)) {
+//                        self.selectedColorsWeighted = stops
+//                    }
+//                } else {
+//                    self.selectedColorsWeighted = stops
+//                }
             }
 
         }
