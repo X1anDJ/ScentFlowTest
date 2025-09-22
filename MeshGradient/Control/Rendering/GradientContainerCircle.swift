@@ -1,48 +1,66 @@
 import SwiftUI
 import UIKit
 
-
-/// A circular container with a liquid-glass rim that holds the mesh gradient.
-/// Optimized: reduced overdraw on the ring; animation handled inside MeshColorCircle.
 struct GradientContainerCircle: View {
     let colors: [Color]
-    /// When `false`, inner mesh is static (no animation). Default = true.
     var animate: Bool = true
-
-    private let rimWidth: CGFloat = 8
+    var isTemplate: Bool = false
+    
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        // Appearance-only tweak: boost intensity in Dark Mode
-        let displayColors = colorScheme == .dark
-            ? scaleAlphas(colors, by: 1.2)   // multiply alpha by 1.2 (clamped)
-            : scaleAlphas(colors, by: 0.85)
+        // Pull themed tokens from AppConfig
+        let tokens = AppConfig.gradientCircleTokens(for: colorScheme)
+
+        // Scale alpha differently per theme
+        let displayColors = scaleAlphas(colors, by: tokens.colorAlphaScale)
 
         return ZStack {
-            GlassRing(width: rimWidth)
-                .accessibilityHidden(true)
-                .allowsHitTesting(false)
+            // Mesh-based halo extending beyond the ring, with enlarged mask to avoid rectangular clip.
+            if !isTemplate {
+                MeshHaloFromMesh(
+                    colors: displayColors,
+                    animate: animate,
+                    startDelta: tokens.glowStartInset,
+                    endDelta: tokens.glowRadiusAdded,
+                    softness: tokens.glowSoftness,
+                    opacity: tokens.glowOpacity
+                )
+            }
 
-            // Inner gradient disk
+
+            Circle()
+                .fill(.background)
+
+            // Glass ring
+            GlassRing(width: tokens.rimWidth)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+
+            // Main mesh content inside the ring
             MeshColorCircle(colors: displayColors, animate: animate)
-                .padding(rimWidth) // inset inside the rim
+                .padding(tokens.rimWidth)
         }
         .aspectRatio(1, contentMode: .fit)
-        
     }
 
     /// Multiplies each color's alpha by `factor`, clamped to [0, 1].
     private func scaleAlphas(_ colors: [Color], by factor: Double) -> [Color] {
         colors.map { c in
             let ui = UIColor(c)
-            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 1
+            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0.8
+            
+            print("49 line")
             if ui.getRed(&r, green: &g, blue: &b, alpha: &a) {
-                let na = min(1.0, max(0.0, Double(a) * factor))
+                let na = min(0.8, max(0.0, Double(a) * factor))
                 return Color(.sRGB, red: Double(r), green: Double(g), blue: Double(b), opacity: na)
             } else {
-                return c // fallback (keep as-is)
+                return c
             }
+            
+            
         }
+        
     }
 }
 
@@ -56,18 +74,15 @@ private struct GlassRing: View {
 
             shape
                 .strokeBorder(.ultraThinMaterial, lineWidth: width)
-                // Outer edge highlight
                 .overlay(
                     shape.strokeBorder(Color.white.opacity(0.55), lineWidth: 1)
                 )
-                // Inner soft rim shadow
                 .overlay(
                     shape
                         .inset(by: width - 1)
                         .strokeBorder(Color.black.opacity(0.18), lineWidth: 1)
                         .blur(radius: 0.6)
                 )
-                // Single directional sheen
                 .overlay(
                     shape
                         .strokeBorder(
@@ -85,14 +100,10 @@ private struct GlassRing: View {
                         .blendMode(.overlay)
                         .opacity(0.9)
                 )
-                // Subtle lift
-                .shadow(color: .black.opacity(0.10), radius: 14, x: 0, y: 8)
-                .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
-                // Collapse blending work to one pass
                 .compositingGroup()
                 .frame(width: side, height: side)
         }
         .aspectRatio(1, contentMode: .fit)
-        .transaction { $0.animation = nil } // avoid implicit anims if parent animates
+        .transaction { $0.animation = nil }
     }
 }

@@ -17,7 +17,7 @@ struct TemplatePreviewCard: View {
 
         return VStack(spacing: 8) {
             // ⬇️ Static preview (animate: false)
-            GradientContainerCircle(colors: palette, animate: false)
+            GradientContainerCircle(colors: palette, animate: false, isTemplate: true)
                 .frame(width: 80, height: 80)
 
             Text(template.name)

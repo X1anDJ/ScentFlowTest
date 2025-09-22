@@ -15,3 +15,45 @@ enum AppConfig {
     static let springResponse: Double = 0.35
     static let springDamping: Double = 0.9
 }
+
+// MARK: - Gradient Container Circle Theme Tokens
+extension AppConfig {
+    struct GradientCircleTokens {
+        // Halo (outside of the rim)
+        let glowStartInset: CGFloat     // negative → start inside rim; positive → outside
+        let glowRadiusAdded: CGFloat    // fade extent beyond rim
+        let glowSoftness: CGFloat
+        let glowOpacity: Double
+
+        // Ring
+        let rimWidth: CGFloat
+
+        // Color treatment
+        let colorAlphaScale: Double     // multiply incoming color alphas
+    }
+
+    /// Returns the tokens for the gradient circle given the current color scheme.
+    /// Tweak these numbers to taste; the goal is a softer, subtler look in light mode.
+    static func gradientCircleTokens(for colorScheme: ColorScheme) -> GradientCircleTokens {
+        switch colorScheme {
+        case .dark:
+            return GradientCircleTokens(
+                glowStartInset: -4,
+                glowRadiusAdded: 80,
+                glowSoftness: 68,
+                glowOpacity: 0.40,
+                rimWidth: 8,
+                colorAlphaScale: 1.20
+            )
+        default:
+            return GradientCircleTokens(
+                glowStartInset: -2,     // start a touch closer to the rim
+                glowRadiusAdded: 64,    // slightly tighter halo in light mode
+                glowSoftness: 60,
+                glowOpacity: 0.28,      // lower glow to avoid washing out light UI
+                rimWidth: 8,
+                colorAlphaScale: 0.85
+            )
+        }
+    }
+}

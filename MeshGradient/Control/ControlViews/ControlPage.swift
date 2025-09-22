@@ -54,6 +54,7 @@ struct ControlPage: View {
                     .frame(width: 224, height: 224)
                     .padding(.vertical, 40)
 
+
                 // Controls (power + fan + scents)
                 ControlsCard(
                     isPowerOn: vm.isPowerOn,
@@ -80,7 +81,7 @@ struct ControlPage: View {
                 )
             }
             .padding(.horizontal)
-            .padding(.bottom, 18)
+            .padding(.bottom, 22)
         }
         .navigationTitle("ScentsFlow")
         .sheet(isPresented: $showScanner) { ScannerSheet() }
