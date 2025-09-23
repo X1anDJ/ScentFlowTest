@@ -396,7 +396,7 @@ private struct GlassOrderButton: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
         }
-        .buttonStyle(.glass)
+        .buttonStyle(.glassProminent)
     }
 }
 

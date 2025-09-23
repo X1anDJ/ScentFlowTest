@@ -44,19 +44,19 @@ extension AppConfig {
                 glowStartInset: -4,
                 glowRadiusAdded: 80,
                 glowSoftness: 68,
-                glowOpacity: 0.6,
+                glowOpacity: 0.7,
                 rimWidth: 8,
                 colorUpperBound: 0.8,
                 colorAlphaScale: 1.25
             )
         default:
             return GradientCircleTokens(
-                glowStartInset: -2,     // start a touch closer to the rim
+                glowStartInset: -4,     // start a touch closer to the rim
                 glowRadiusAdded: 58,    // slightly tighter halo in light mode
-                glowSoftness: 60,
-                glowOpacity: 0.48,      // lower glow to avoid washing out light UI
+                glowSoftness: 50,
+                glowOpacity: 0.48,       
                 rimWidth: 8,
-                colorUpperBound: 0.7,
+                colorUpperBound: 0.65,
                 colorAlphaScale: 0.85
             )
         }

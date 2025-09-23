@@ -3,10 +3,10 @@ import SwiftUI
 struct ControlPage: View {
     @StateObject private var vm = GradientWheelViewModel()
     @StateObject private var devices = DevicesStore()
-
+    
     // Sheets
     @State private var showScanner = false
-
+    
     var body: some View {
         ScrollView {
             VStack(spacing: 18) {
@@ -29,7 +29,7 @@ struct ControlPage: View {
                             }
                         }
                     }
-
+                    
                     // Add device section
                     Section("Add Device") {
                         Button { showScanner = true } label: {
@@ -48,13 +48,17 @@ struct ControlPage: View {
                 .font(.headline)
                 .foregroundStyle(.secondary)
                 .padding(.top, 4)
-
+                
                 // Wheel (off when power is off)
-                GradientContainerCircle(colors: vm.isPowerOn ? vm.selectedColorsWeighted : [])
-                    .frame(width: 224, height: 224)
-                    .padding(.vertical, 40)
-
-
+                GradientContainerCircle(
+                    colors: vm.selectedColorsWeighted,
+                    animate: vm.isPowerOn,
+                    meshOpacity: vm.wheelOpacity
+                )
+                .frame(width: 220, height: 220)
+                .padding(.vertical, 36)
+                
+                
                 // Controls (power + fan + scents)
                 ControlsCard(
                     isPowerOn: vm.isPowerOn,
@@ -70,7 +74,7 @@ struct ControlPage: View {
                     onTapHue: { vm.toggle($0) },
                     onChangeOpacity: { name, eff in vm.setOpacity(eff, for: name) }
                 )
-
+                
                 // Templates
                 TemplatesCard(
                     names: vm.canonicalOrder,
@@ -85,7 +89,7 @@ struct ControlPage: View {
         }
         .navigationTitle("ScentsFlow")
         .sheet(isPresented: $showScanner) { ScannerSheet() }
-
+        
         // Sync per-device settings
         .onChange(of: vm.isPowerOn) { _, new in
             devices.updateCurrentSettings(.init(isPowerOn: new, fanSpeed: vm.fanSpeed))
@@ -93,7 +97,7 @@ struct ControlPage: View {
         .onChange(of: vm.fanSpeed) { _, new in
             devices.updateCurrentSettings(.init(isPowerOn: vm.isPowerOn, fanSpeed: new))
         }
-
+        
         // Initial sync
         .onAppear {
             if let current = devices.selected {
@@ -101,7 +105,7 @@ struct ControlPage: View {
                 vm.fanSpeed  = current.settings.fanSpeed
             }
         }
-
+        
     }
 }
 

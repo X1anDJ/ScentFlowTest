@@ -35,18 +35,40 @@ final class GradientWheelViewModel: ObservableObject {
     // MARK: - Device (parent controls)
     @Published var isPowerOn: Bool = true
     @Published var fanSpeed: Double = 0.5   // reserved for later use
-
+    @Published var wheelOpacity: Double = 1.0
+    
     func togglePower() {
+        let turningOn = !isPowerOn
         withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
-            isPowerOn.toggle()
+            isPowerOn = turningOn
         }
-        if isPowerOn {
+
+        if turningOn {
+            clearTask?.cancel()
+            clearTask = nil
+            
             scheduleWheelRebuild()
+            withAnimation(.easeInOut(duration: 1.0)) {
+                wheelOpacity = 1.0
+            }
         } else {
-            // Immediately clear on power-off without heavy work
-            selectedColorsWeighted = []
+            let fadeDuration: Double = 1.0
+            withAnimation(.easeInOut(duration: fadeDuration)) {
+                wheelOpacity = 0.0
+            }
+            clearTask?.cancel()
+            clearTask = Task { [weak self] in
+                guard let self else { return }
+                try? await Task.sleep(nanoseconds: UInt64(fadeDuration * 1_000_000_000))
+                if Task.isCancelled { return }
+                await MainActor.run {
+                    self.selectedColorsWeighted = []
+                }
+            }
         }
     }
+
+
 
     func setFanSpeed(_ v: Double) {
         fanSpeed = max(0, min(1, v))
@@ -79,14 +101,19 @@ final class GradientWheelViewModel: ObservableObject {
 
     // MARK: - Private async machinery
     private var rebuildTask: Task<Void, Never>?
+    private var clearTask: Task<Void, Never>?
     private let builder = GradientWheelBuilder()
 
-    deinit { rebuildTask?.cancel() }
+    deinit {
+        rebuildTask?.cancel()
+        clearTask?.cancel()
+    }
 
     // Debounced off-main rebuild
     func scheduleWheelRebuild() {
         rebuildTask?.cancel()
-
+        clearTask?.cancel()
+        
         // Snapshot inputs so the worker runs on immutable data off-main
         let snap = GradientWheelBuilder.Snapshot(
             canonicalOrder: canonicalOrder,
@@ -99,7 +126,7 @@ final class GradientWheelViewModel: ObservableObject {
         rebuildTask = Task { [weak self] in
             // Coalesce rapid changes (slider, taps)
        //     try? await Task.sleep(nanoseconds: UInt64(debounceMillis) * 1_000_000)
-
+            try? await Task.sleep(nanoseconds: 80_000_000)
             // Heavy work off the main actor
             let stops = await self?.builder.makeStops(from: snap) ?? []
 
@@ -112,15 +139,6 @@ final class GradientWheelViewModel: ObservableObject {
                 withAnimation(.easeInOut(duration: 1.0)) {
                     self.selectedColorsWeighted = stops
                 }
-//                let wasEmpty = self.selectedColorsWeighted.isEmpty
-//                // Re-enable animations for the “come back” moment
-//                if wasEmpty && !stops.isEmpty {
-//                    withAnimation(.easeInOut(duration: 1.0)) {
-//                        self.selectedColorsWeighted = stops
-//                    }
-//                } else {
-//                    self.selectedColorsWeighted = stops
-//                }
             }
 
         }
