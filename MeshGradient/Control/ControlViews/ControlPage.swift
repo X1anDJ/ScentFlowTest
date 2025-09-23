@@ -53,7 +53,9 @@ struct ControlPage: View {
                 GradientContainerCircle(
                     colors: vm.selectedColorsWeighted,
                     animate: vm.isPowerOn,
-                    meshOpacity: vm.wheelOpacity
+                    meshOpacity: vm.wheelOpacity,
+                    isOn: vm.isPowerOn,
+                    onToggle: { vm.togglePower() }
                 )
                 .frame(width: 220, height: 220)
                 .padding(.vertical, 36)

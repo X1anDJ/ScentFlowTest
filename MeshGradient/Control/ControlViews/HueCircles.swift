@@ -45,8 +45,6 @@ struct HueCircles: View {
 
         Button { onTap(name) } label: {
             ZStack {
-
-
                 // FOREGROUND: chip content (added = fill, not added = ring)
                 if isAdded {
                     Circle()

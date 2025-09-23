@@ -8,102 +8,127 @@ struct GradientContainerCircle: View {
     var isTemplate: Bool = false
     var meshOpacity: Double = 1.0
     
+    // Power behavior mirrored from PowerFanGroup:
+    var isOn: Bool = false
+    var onToggle: () -> Void = { }
+    
     @Environment(\.colorScheme) private var colorScheme
-
+    
     var body: some View {
         // Pull themed tokens from AppConfig
         let tokens = AppConfig.gradientCircleTokens(for: colorScheme)
-
+        
         // Scale alpha differently per theme
         let displayColors = scaleAlphas(colors, tokens.colorUpperBound, by: tokens.colorAlphaScale)
-
+        
         // Pick themed shadow based on current scheme
         let baseShadow = (colorScheme == .dark ? Theme.Shadow.wheelDark : Theme.Shadow.wheelLight)
-
+        
         return ZStack {
-            // Mesh-based halo extending beyond the ring
-            if !isTemplate {
-                MeshHaloFromMesh(
-                    colors: displayColors,
-                    animate: animate,
-                    startDelta: tokens.glowStartInset,
-                    endDelta: tokens.glowRadiusAdded,
-                    softness: tokens.glowSoftness,
-                    opacity: tokens.glowOpacity
-                )
-                .opacity(meshOpacity)
-                // Fade timing for halo (decoupled from the spring)
-                .animation(.easeInOut(duration: fadingDuration), value: meshOpacity)
-            }
-
-            // Fill to block halo from bleeding inward
-            Circle()
-                .fill(.background)
-                .opacity(animate ? 0.8 : 0.4)
-                .shadow(
-                    color: baseShadow.opacity(animate ? 0.3 : 1.0),
-                    radius: animate ? 15 : 30, x: 0, y: 0
-                )
-                .animation(.spring(response: 0.6, dampingFraction: 0.4), value: animate)
-            
-//            GeometryReader { geo in
-//                let r = min(geo.size.width, geo.size.height) / 2
-//                Circle()
-//                    .fill(Theme.CircleFill.gradient(for: colorScheme, radius: r * 3))
-//                    .opacity(animate ? 0.0 : 1.0)
-//                    .animation(.spring(response: 0.85, dampingFraction: 0.4), value: animate)
-//            }
-//            .aspectRatio(1, contentMode: .fit)
-
-            
-            Circle()
-                .inset(by: tokens.rimWidth)
-                .fill(
-                    RadialGradient(
-                        gradient: Gradient(stops: [
-                            // Strongest in the center …
-                            .init(
-                                color: (colorScheme == .dark
-                                        ? Theme.CircleFill.innerDark
-                                        : Theme.CircleFill.innerLight),
-                                location: 0.0
-                            ),
-                            // … then fade out before the edge (tune 0.75–0.9 as you like)
-                            .init(
-                                color: (colorScheme == .dark
-                                        ? Theme.CircleFill.outerDark
-                                        : Theme.CircleFill.outerLight),
-                                location: 0.85
-                            )
-                        ]),
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: .infinity // let SwiftUI size it to the shape’s bounds
+            ZStack {
+                // Mesh-based halo extending beyond the ring
+                if !isTemplate {
+                    MeshHaloFromMesh(
+                        colors: displayColors,
+                        animate: animate,
+                        startDelta: tokens.glowStartInset,
+                        endDelta: tokens.glowRadiusAdded,
+                        softness: tokens.glowSoftness,
+                        opacity: tokens.glowOpacity
                     )
-                )
-                .opacity(animate ? 0.0 : 1.0)
-                .animation(.spring(response: 0.6, dampingFraction: 0.4), value: animate)
-            
-            // Glass ring (always visible)
-            GlassRing(width: tokens.rimWidth)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-            
-
-            // Main mesh content inside the ring
-            MeshColorCircle(colors: displayColors, animate: animate)
-                .padding(tokens.rimWidth)
-                .opacity(meshOpacity)
+                    .opacity(meshOpacity)
+                    // Fade timing for halo (decoupled from the spring)
+                    .animation(.easeInOut(duration: fadingDuration), value: meshOpacity)
+                }
+                
+                // Fill to block halo from bleeding inward
+                Circle()
+                    .fill(.background)
+                    .opacity(animate ? 0.8 : 0.4)
+                    .shadow(
+                        color: baseShadow.opacity(animate ? 0.3 : 1.0),
+                        radius: animate ? 15 : 30, x: 0, y: 0
+                    )
+                    .animation(.spring(response: 0.6, dampingFraction: 0.4), value: animate)
+                
+                //            GeometryReader { geo in
+                //                let r = min(geo.size.width, geo.size.height) / 2
+                //                Circle()
+                //                    .fill(Theme.CircleFill.gradient(for: colorScheme, radius: r * 3))
+                //                    .opacity(animate ? 0.0 : 1.0)
+                //                    .animation(.spring(response: 0.85, dampingFraction: 0.4), value: animate)
+                //            }
+                //            .aspectRatio(1, contentMode: .fit)
+                
+                
+                Circle()
+                    .inset(by: tokens.rimWidth)
+                    .fill(
+                        RadialGradient(
+                            gradient: Gradient(stops: [
+                                // Strongest in the center …
+                                .init(
+                                    color: (colorScheme == .dark
+                                            ? Theme.CircleFill.innerDark
+                                            : Theme.CircleFill.innerLight),
+                                    location: 0.0
+                                ),
+                                // … then fade out before the edge (tune 0.75–0.9 as you like)
+                                .init(
+                                    color: (colorScheme == .dark
+                                            ? Theme.CircleFill.outerDark
+                                            : Theme.CircleFill.outerLight),
+                                    location: 0.85
+                                )
+                            ]),
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: .infinity // let SwiftUI size it to the shape’s bounds
+                        )
+                    )
+                    .opacity(animate ? 0.0 : 1.0)
+                    .animation(.spring(response: 0.6, dampingFraction: 0.4), value: animate)
+                
+                // Glass ring (always visible)
+                GlassRing(width: tokens.rimWidth)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                
+                
+                // Main mesh content inside the ring
+                MeshColorCircle(colors: displayColors, animate: animate)
+                    .padding(tokens.rimWidth)
+                    .opacity(meshOpacity)
                 // Fade timing for mesh (decoupled from the spring)
-                .animation(.easeInOut(duration: fadingDuration), value: meshOpacity)
+                    .animation(.easeInOut(duration: fadingDuration), value: meshOpacity)
+            }
+            .aspectRatio(1, contentMode: .fit)
+            // Power-driven raise/drop ONLY
+            .scaleEffect(animate ? 1.0 : 0.95)
+            .animation(.spring(response: 0.6, dampingFraction: 0.4), value: animate) // scoped to scale
+//            
+//            // Power Button Testing
+//            if !isTemplate {
+//                // Center power button overlay (60x60), icon-only.
+//                Button(action: onToggle) {
+//                    Image(systemName: "power")
+//                        .font(.system(size: 26, weight: .semibold))
+//                        .frame(width: 60, height: 60)
+//                        .animation(nil, value: isOn)
+//                }
+//                                        .clipShape(Circle())
+//                .transaction { txn in txn.animation = nil }
+//                .buttonStyle(.glass)
+//                .accessibilityLabel("Toggle power")
+//                .accessibilityValue(isOn ? "On" : "Off")
+//            }
+
         }
-        .aspectRatio(1, contentMode: .fit)
-        // Power-driven raise/drop ONLY
-        .scaleEffect(animate ? 1.0 : 0.95)
-        .animation(.spring(response: 0.6, dampingFraction: 0.4), value: animate) // scoped to scale
+        
+        
     }
-
-
+    
+    
     /// Multiplies each color's alpha by `factor`, clamped to [0, 1].
     private func scaleAlphas(_ colors: [Color], _ upperBound: Double, by factor: Double) -> [Color] {
         colors.map { c in
@@ -125,12 +150,12 @@ struct GradientContainerCircle: View {
 
 private struct GlassRing: View {
     let width: CGFloat
-
+    
     var body: some View {
         GeometryReader { geo in
             let side = min(geo.size.width, geo.size.height)
             let shape = Circle()
-
+            
             shape
                 .strokeBorder(.ultraThinMaterial, lineWidth: width)
                 .overlay(

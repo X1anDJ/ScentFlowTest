@@ -19,7 +19,7 @@ struct ExplorePage: View {
                     CardWithShadowContainer(
                         title: "Customize Pod",
                         height: 260,
-                        background: { Image("colorInk").resizable().scaledToFill() },
+                        background: { Image("colorInk2").resizable().scaledToFill() },
                         label: { Text("Unique scent make by you").font(.subheadline) }
                     )
 //                    .padding(.horizontal, 16) // <- add gutters here
