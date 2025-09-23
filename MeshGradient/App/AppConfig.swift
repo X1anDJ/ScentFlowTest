@@ -18,6 +18,7 @@ enum AppConfig {
 
 // MARK: - Gradient Container Circle Theme Tokens
 extension AppConfig {
+    
     struct GradientCircleTokens {
         // Halo (outside of the rim)
         let glowStartInset: CGFloat     // negative → start inside rim; positive → outside
@@ -29,7 +30,9 @@ extension AppConfig {
         let rimWidth: CGFloat
 
         // Color treatment
+        let colorUpperBound: Double
         let colorAlphaScale: Double     // multiply incoming color alphas
+        
     }
 
     /// Returns the tokens for the gradient circle given the current color scheme.
@@ -41,17 +44,19 @@ extension AppConfig {
                 glowStartInset: -4,
                 glowRadiusAdded: 80,
                 glowSoftness: 68,
-                glowOpacity: 0.40,
+                glowOpacity: 0.6,
                 rimWidth: 8,
-                colorAlphaScale: 1.20
+                colorUpperBound: 0.8,
+                colorAlphaScale: 1.25
             )
         default:
             return GradientCircleTokens(
                 glowStartInset: -2,     // start a touch closer to the rim
-                glowRadiusAdded: 64,    // slightly tighter halo in light mode
+                glowRadiusAdded: 58,    // slightly tighter halo in light mode
                 glowSoftness: 60,
-                glowOpacity: 0.28,      // lower glow to avoid washing out light UI
+                glowOpacity: 0.48,      // lower glow to avoid washing out light UI
                 rimWidth: 8,
+                colorUpperBound: 0.7,
                 colorAlphaScale: 0.85
             )
         }

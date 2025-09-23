@@ -10,9 +10,33 @@
 		DCC1631A2E6A565B00A7DA67 /* MeshGradient.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MeshGradient.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		DCEFA2412E82116F005DB683 /* Exceptions for "MeshGradient" folder in "MeshGradient" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Control/DeviceViews/Scanner/SupportedSymbologies.swift,
+			);
+			target = DCC163192E6A565B00A7DA67 /* MeshGradient */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		DCEFA2422E82116F005DB683 /* Exceptions for "MeshGradient" folder in "Copy Bundle Resources" phase from "MeshGradient" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = DCC163182E6A565B00A7DA67 /* Resources */;
+			membershipExceptions = (
+				Control/DeviceViews/Scanner/SupportedSymbologies.swift,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		DCC1631C2E6A565B00A7DA67 /* MeshGradient */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				DCEFA2412E82116F005DB683 /* Exceptions for "MeshGradient" folder in "MeshGradient" target */,
+				DCEFA2422E82116F005DB683 /* Exceptions for "MeshGradient" folder in "Copy Bundle Resources" phase from "MeshGradient" target */,
+			);
 			path = MeshGradient;
 			sourceTree = "<group>";
 		};
@@ -179,6 +203,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
@@ -237,6 +262,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
@@ -259,6 +285,7 @@
 				DEVELOPMENT_TEAM = ZGPM5R49KX;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "We use the camera to scan QR codes and barcodes to pair your device.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -295,6 +322,7 @@
 				DEVELOPMENT_TEAM = ZGPM5R49KX;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "We use the camera to scan QR codes and barcodes to pair your device.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

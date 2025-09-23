@@ -45,6 +45,7 @@ struct ControlsCard: View {
                             canSelectMore: canSelectMore,
                             onTap: onTapHue
                         )
+                        
 
                         // Collapsed: single slider for focused scent
                         if !isExpanded, let f = focusedName {

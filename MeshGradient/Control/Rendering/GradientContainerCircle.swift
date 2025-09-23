@@ -13,7 +13,7 @@ struct GradientContainerCircle: View {
         let tokens = AppConfig.gradientCircleTokens(for: colorScheme)
 
         // Scale alpha differently per theme
-        let displayColors = scaleAlphas(colors, by: tokens.colorAlphaScale)
+        let displayColors = scaleAlphas(colors, tokens.colorUpperBound, by: tokens.colorAlphaScale)
 
         return ZStack {
             // Mesh-based halo extending beyond the ring, with enlarged mask to avoid rectangular clip.
@@ -45,14 +45,13 @@ struct GradientContainerCircle: View {
     }
 
     /// Multiplies each color's alpha by `factor`, clamped to [0, 1].
-    private func scaleAlphas(_ colors: [Color], by factor: Double) -> [Color] {
+    private func scaleAlphas(_ colors: [Color], _ upperBound: Double, by factor: Double) -> [Color] {
         colors.map { c in
             let ui = UIColor(c)
-            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0.8
+            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = upperBound
             
-            print("49 line")
             if ui.getRed(&r, green: &g, blue: &b, alpha: &a) {
-                let na = min(0.8, max(0.0, Double(a) * factor))
+                let na = min(upperBound, max(0.0, Double(a) * factor))
                 return Color(.sRGB, red: Double(r), green: Double(g), blue: Double(b), opacity: na)
             } else {
                 return c

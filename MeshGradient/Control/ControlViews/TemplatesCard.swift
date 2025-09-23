@@ -1,13 +1,5 @@
 import SwiftUI
 
-/// Wrapper that matches your original ContentView call site:
-/// TemplatesCard(
-///   names: [String],
-///   colorDict: [String: Color],
-///   included: Set<String>,
-///   opacities: [String: Double],
-///   onApplyTemplate: (Set<String>, [String: Double]) -> Void
-/// )
 struct TemplatesCard: View {
     let names: [String]
     let colorDict: [String: Color]
@@ -15,15 +7,20 @@ struct TemplatesCard: View {
     let opacities: [String: Double]           // current mix
     let onApplyTemplate: (_ included: Set<String>, _ opacities: [String: Double]) -> Void
 
-    // In-memory list of saved templates (string-based model to match your ColorTemplate.swift)
     @State private var templates: [ColorTemplate] = []
+
+    // Alert state
+    @State private var showingNameAlert = false
+    @State private var newTemplateName: String = ""
 
     var body: some View {
         CardContainer(title: "Templates") {
             // trailing actions
             HStack(spacing: 8) {
                 Button {
-                    saveCurrentTemplate()
+                    // Pre-fill with a sensible default; user can edit in the alert
+                    newTemplateName = "Mix \(templates.count + 1)"
+                    showingNameAlert = true
                 } label: {
                     Label("Save", systemImage: "plus.circle.fill")
                         .labelStyle(.titleAndIcon)
@@ -38,7 +35,6 @@ struct TemplatesCard: View {
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
-                // Uses your existing TemplatesGallery from ColorTemplate.swift
                 TemplatesGallery(
                     names: names,
                     colorDict: colorDict,
@@ -52,12 +48,27 @@ struct TemplatesCard: View {
                 )
             }
         }
+        // Native SwiftUI alert with a TextField for the name (iOS 16+)
+        .alert("Save Template", isPresented: $showingNameAlert) {
+            TextField("Template name", text: $newTemplateName)
+                .textInputAutocapitalization(.words)
+                .disableAutocorrection(true)
+
+            Button("Save") {
+                saveCurrentTemplate(named: newTemplateName.trimmingCharacters(in: .whitespacesAndNewlines))
+            }
+            .disabled(newTemplateName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Enter a name for this color mix.")
+        }
     }
 
-    private func saveCurrentTemplate() {
-        // Give it a simple default name based on count
+    private func saveCurrentTemplate(named name: String) {
+        guard !name.isEmpty else { return }
         let new = ColorTemplate(
-            name: "Mix \(templates.count + 1)",
+            name: name,
             included: included,
             opacities: opacities
         )
