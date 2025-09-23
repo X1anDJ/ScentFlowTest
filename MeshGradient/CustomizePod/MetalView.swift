@@ -8,6 +8,7 @@ struct MetalView: UIViewRepresentable {
         let v = MTKView()
         v.device = MTLCreateSystemDefaultDevice()
         v.clearColor = MTLClearColorMake(0, 0, 0, 0) // transparent so glass look works
+        v.isOpaque = false
         v.framebufferOnly = false
         v.enableSetNeedsDisplay = false
         v.isPaused = false

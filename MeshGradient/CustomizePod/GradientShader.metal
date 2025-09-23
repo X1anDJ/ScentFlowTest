@@ -66,6 +66,12 @@ vertex VOut vertex_main(const device float2* vertices [[buffer(0)]], uint vid [[
 
 // ---------- Fragment ----------
 fragment float4 fragment_main(VOut in [[stage_in]], constant Params& P [[buffer(0)]]) {
+    
+    float sumMasks = P.mask1 + P.mask2 + P.mask3 + P.mask4 + P.mask5 + P.mask6;
+        if (sumMasks < 0.5) {
+            return float4(0.0, 0.0, 0.0, 0.0); // transparent
+        }
+    
     float2 p = in.uv*2.0-1.0; p.x *= P.aspect.x;
     float t = P.time * P.speed;
 

@@ -19,6 +19,7 @@ struct ContentView: View {
                 }
             }
         }
+        //.contentTransition(.symbolEffect(.replace)): Smooth symbol replacement for SFSymbols.
         .tabBarMinimizeBehavior(.onScrollDown)
     }
 }

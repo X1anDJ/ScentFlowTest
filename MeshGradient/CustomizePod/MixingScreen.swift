@@ -59,13 +59,19 @@ struct MixingScreen: View {
                 MetalView(params: shaderParams)
                     .frame(width: ballSize, height: ballSize)
                     .clipShape(Circle())
+                    .background(                       // shows through only when fragment is transparent
+                        Circle().fill(
+                            Color(.sRGB, red: 0.05, green: 0.05, blue: 0.07, opacity: 0.1)
+                        )
+                    )
                     .compositingGroup()
+
 
                 // Clear glass disc (iOS 26+) or material fallback
                 glassCircle(ballSize)
                     .allowsHitTesting(false)
             }
-            .shadow(color: .black.opacity(0.12), radius: 24, x: 0, y: 10)
+            .shadow(color: .black.opacity(0.1), radius: 24, x: 0, y: 0)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 48)
 

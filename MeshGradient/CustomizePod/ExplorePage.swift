@@ -13,25 +13,21 @@ struct ExplorePage: View {
         ScrollView {
             VStack(spacing: 16) {
 
-                // Card 1: Customize Pod
-                CardContainer(title: "Customize Pod") {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Unique scent just for you")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-
-                        NavigationLink {
-                            CustomizePodPage()
-                        } label: {
-                            HStack {
-                                Spacer()
-                                Text("Create").fontWeight(.semibold)
-                                Spacer()
-                            }
-                        }
-                        .buttonStyle(.glass)
-                    }
+                NavigationLink {
+                    CustomizePodPage()
+                } label: {
+                    CardWithShadowContainer(
+                        title: "Customize Pod",
+                        height: 260,
+                        background: { Image("colorInk").resizable().scaledToFill() },
+                        label: { Text("Unique scent make by you").font(.subheadline) }
+                    )
+//                    .padding(.horizontal, 16) // <- add gutters here
                 }
+                .buttonStyle(.plain)
+
+
+
 
                 // Card 2: Scents Templates (placeholder)
                 CardContainer(title: "Scents Templates") {

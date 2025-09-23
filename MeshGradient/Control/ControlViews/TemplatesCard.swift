@@ -48,7 +48,6 @@ struct TemplatesCard: View {
                 )
             }
         }
-        // Native SwiftUI alert with a TextField for the name (iOS 16+)
         .alert("Save Template", isPresented: $showingNameAlert) {
             TextField("Template name", text: $newTemplateName)
                 .textInputAutocapitalization(.words)
@@ -57,6 +56,7 @@ struct TemplatesCard: View {
             Button("Save") {
                 saveCurrentTemplate(named: newTemplateName.trimmingCharacters(in: .whitespacesAndNewlines))
             }
+            .buttonStyle(.glassProminent)
             .disabled(newTemplateName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
             Button("Cancel", role: .cancel) { }
