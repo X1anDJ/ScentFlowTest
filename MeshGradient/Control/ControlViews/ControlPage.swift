@@ -3,23 +3,35 @@ import SwiftUI
 struct ControlPage: View {
     // MARK: - Tunables
     private enum UI {
-        static let maxScroll: CGFloat      = 80     // how many pts of scroll to fully apply effects
-        static let shrinkAmount: CGFloat   = 0.20    // 20% shrink at maxScroll (1.0 → 0.8)
         static let baseWheelSize: CGFloat  = 220
-        static let baseVPadding: CGFloat   = 36
-        static let paddingShrink: CGFloat  = 0.80    // reduce vertical padding up to 70% at maxScroll
+        static let baseVPadding: CGFloat   = 24
+        static let expandedScale: CGFloat  = 0.70    // shrink to 70% when child expands
+        static let collapsedScale: CGFloat = 1.00
+        static let overlapOffset: CGFloat  = -14     // allow gentle overlap when expanded
+        static let cardHPad: CGFloat       = 16
+        static let cardBottomPad: CGFloat  = 22
     }
 
     @StateObject private var vm = GradientWheelViewModel()
     @StateObject private var devices = DevicesStore()
 
     @State private var showScanner = false
-    @State private var scrollY: CGFloat = 0
+
+    // Pager state: 0 = Controls, 1 = Templates
+    @State private var pageIndex: Int? = 0   // <-- make optional to satisfy `.scrollPosition(id:)`
+
+    // ControlsCard expansion state lifted up from child
+    @State private var controlsExpanded: Bool = false
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 18) {
+        GeometryReader { proxy in
+            // Compute dynamic scale & vertical spacing
+            let wheelScale = controlsExpanded ? UI.expandedScale : UI.collapsedScale
+            let topPadding = UI.baseVPadding
+            let allowOverlap = controlsExpanded
 
+            VStack(spacing: 12) {
+                // Device menu
                 Menu {
                     Section("My Devices") {
                         ForEach(devices.devices) { device in
@@ -51,66 +63,90 @@ struct ControlPage: View {
                 .font(.headline)
                 .foregroundStyle(.secondary)
                 .padding(.top, 4)
+                .padding(.leading, 16)
 
-                // ---- Scroll-driven mapping
-                let t      = min(max(scrollY, 0), UI.maxScroll) / UI.maxScroll   // 0…1
-                let scale  = 1.0 - UI.shrinkAmount * t                            // 1.0 → (1 - shrinkAmount)
-                let vPad   = UI.baseVPadding * (1.0 - UI.paddingShrink * t)       // 36 → ~11 (with paddingShrink=0.7)
+                // Gradient circle (shrinks when scents child unfolds)
+                ZStack {
+                    GradientContainerCircle(
+                        colors: vm.selectedColorsWeighted,
+                        animate: vm.isPowerOn,
+                        meshOpacity: vm.wheelOpacity,
+                        isOn: vm.isPowerOn,
+                        onToggle: { vm.togglePower() }
+                    )
+                    .frame(width: UI.baseWheelSize, height: UI.baseWheelSize)
+                    .scaleEffect(wheelScale, anchor: .center)
+                    .animation(.spring(response: 0.45, dampingFraction: 0.85), value: wheelScale)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, topPadding)
 
-                // Wheel
-                GradientContainerCircle(
-                    colors: vm.selectedColorsWeighted,
-                    animate: vm.isPowerOn,
-                    meshOpacity: vm.wheelOpacity,
-                    isOn: vm.isPowerOn,
-                    onToggle: { vm.togglePower() }
-                )
-                .frame(width: UI.baseWheelSize, height: UI.baseWheelSize)
-                .scaleEffect(scale, anchor: .center)
-                .animation(.spring(response: 0.45, dampingFraction: 0.85), value: scale)
-                .padding(.vertical, vPad)
+                // Pager dot indicator (outside the card, above it)
+                HStack(spacing: 8) {
+                    ForEach(0..<2) { i in
+                        Circle()
+                            .frame(width: 6, height: 6)
+                            .opacity((pageIndex ?? 0) == i ? 1.0 : 0.3) // compare using coalesced value
+                            .animation(.easeInOut(duration: 0.2), value: pageIndex)
+                    }
+                }
+                .padding(.top, 6)
 
-                // Controls
-                ControlsCard(
-                    isPowerOn: vm.isPowerOn,
-                    fanSpeed: vm.fanSpeed,
-                    onTogglePower: { vm.togglePower() },
-                    onChangeFanSpeed: { vm.setFanSpeed($0) },
-                    names: vm.canonicalOrder,
-                    colorDict: vm.colorDict,
-                    included: vm.included,
-                    focusedName: vm.focusedName,
-                    canSelectMore: vm.canSelectMore,
-                    opacities: vm.opacities,
-                    onTapHue: { vm.toggle($0) },
-                    onChangeOpacity: { name, eff in vm.setOpacity(eff, for: name) }
-                )
+                // Cards pager (no ScrollView; swipe to switch between two cards)
+                ScrollView(.horizontal, showsIndicators: false){
+                    HStack(spacing: 0) {
+                        // Page 0: Controls
+                        ControlsCard(
+                            isPowerOn: vm.isPowerOn,
+                            fanSpeed: vm.fanSpeed,
+                            onTogglePower: { vm.togglePower() },
+                            onChangeFanSpeed: { vm.setFanSpeed($0) },
+                            names: vm.canonicalOrder,
+                            colorDict: vm.colorDict,
+                            included: vm.included,
+                            focusedName: vm.focusedName,
+                            canSelectMore: vm.canSelectMore,
+                            opacities: vm.opacities,
+                            onTapHue: { vm.toggle($0) },
+                            onChangeOpacity: { name, eff in vm.setOpacity(eff, for: name) },
+                            onExpansionChange: { expanded in
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
+                                    controlsExpanded = expanded
+                                }
+                            }
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .containerRelativeFrame(.horizontal)
+                        .id(0)
 
-                // Debug label (optional—remove if you don’t want it)
-                Text(String(format: "scrollY: %.0f  |  scale: %.2f  |  vPad: %.1f", scrollY, scale, vPad))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                        // Page 1: Templates
+                        TemplatesCard(
+                            names: vm.canonicalOrder,
+                            colorDict: vm.colorDict,
+                            included: vm.included,
+                            opacities: vm.opacities,
+                            onApplyTemplate: { inc, ops in vm.applyTemplate(included: inc, opacities: ops) }
+                        )
+                        .containerRelativeFrame(.horizontal)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .id(1) // distinct id
+                    }
+                    .scrollTargetLayout()
 
-                TemplatesCard(
-                    names: vm.canonicalOrder,
-                    colorDict: vm.colorDict,
-                    included: vm.included,
-                    opacities: vm.opacities,
-                    onApplyTemplate: { inc, ops in vm.applyTemplate(included: inc, opacities: ops) }
-                )
+                }
+                .contentMargins(.horizontal, UI.cardHPad, for: .scrollContent)
+                .scrollTargetBehavior(.paging)
+                .scrollPosition(id: $pageIndex)
+                .padding(.bottom, UI.cardBottomPad)
+                // allow circle + card overlap if expanded and vertical space is tight
+                .padding(.top, allowOverlap ? UI.overlapOffset : 0)
+                
             }
-            .padding(.horizontal)
-            .padding(.bottom, 22)
+//
+//            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
         }
         .navigationTitle("ScentsFlow")
         .sheet(isPresented: $showScanner) { ScannerSheet() }
-
-        // iOS 18+ contentOffset reader
-        .onScrollGeometryChange(for: CGFloat.self) { geometry in
-            geometry.contentOffset.y
-        } action: { _, newY in
-            scrollY = max(0, newY)
-        }
 
         // Keep per-device settings in sync
         .onChange(of: vm.isPowerOn) { _, new in
@@ -123,6 +159,7 @@ struct ControlPage: View {
             if let current = devices.selected {
                 vm.isPowerOn = current.settings.isPowerOn
                 vm.fanSpeed  = current.settings.fanSpeed
+                
             }
         }
     }

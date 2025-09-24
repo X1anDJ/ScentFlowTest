@@ -17,15 +17,18 @@ struct ControlsCard: View {
     let onTapHue: (String) -> Void
     let onChangeOpacity: (_ name: String, _ value: Double) -> Void
 
+    /// Notify parent when the scents child card expands/collapses,
+    /// so the parent can shrink/overlap the circle accordingly.
+    var onExpansionChange: (Bool) -> Void = { _ in }
+
     // UI
     @State private var isExpanded = false
 
     var body: some View {
         // Use explicit trailing builder so generics always infer
         CardContainer(title: "Controls", trailing: { EmptyView() }) {
-            //Divider().opacity(0.6)
             VStack(spacing: 16) {
-                // Parent: Power + Fan (matches your PowerFanGroup API)
+                // Parent: Power + Fan
                 PowerFanGroup(
                     isOn: isPowerOn,
                     speed: fanSpeed,
@@ -36,7 +39,7 @@ struct ControlsCard: View {
                 // Child: Scents
                 ChildCard(title: "Pods", trailing: { childExpandButton }) {
                     VStack(spacing: 16) {
-                        // Hue chips row; 3-state is handled in vm.toggle(name)
+                        // Hue chips row
                         HueCircles(
                             names: names,
                             colorDict: colorDict,
@@ -45,18 +48,15 @@ struct ControlsCard: View {
                             canSelectMore: canSelectMore,
                             onTap: onTapHue
                         )
-                        
 
                         // Collapsed: single slider for focused scent
                         if !isExpanded, let f = focusedName {
-                            // Build a lightweight Scent for the control's label/color
                             let focusedScent = Scent(
                                 name: f,
                                 color: colorDict[f] ?? .gray,
                                 defaultIntensity: 0
                             )
 
-                            // Bridge current effective value <-> callback as a Binding<Double>
                             let binding = Binding<Double>(
                                 get: { opacities[f] ?? 0 },
                                 set: { onChangeOpacity(f, $0) }
@@ -71,12 +71,6 @@ struct ControlsCard: View {
                         // Expanded: per-scent rows with sliders
                         if isExpanded && !included.isEmpty {
                             VStack(spacing: 10) {
-//                                HStack {
-//                                    Text("Active Scents")
-//                                        .font(Font.caption)
-//                                    Spacer()
-//                                }
-                            
                                 ForEach(names.filter { included.contains($0) }, id: \.self) { name in
                                     ColorRow(
                                         name: name,
@@ -95,12 +89,17 @@ struct ControlsCard: View {
                 }
             }
         }
+        .onAppear {
+            // Ensure parent knows the initial state
+            onExpansionChange(isExpanded)
+        }
     }
 
     private var childExpandButton: some View {
         Button {
             withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
                 isExpanded.toggle()
+                onExpansionChange(isExpanded)
             }
         } label: {
             Label(isExpanded ? "Collapse" : "Expand",
@@ -154,4 +153,3 @@ private struct ChildCard<Content: View, Trailing: View>: View {
         )
     }
 }
-

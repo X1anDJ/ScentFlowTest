@@ -23,7 +23,7 @@ struct CardContainer<Content: View, Trailing: View, Background: View>: View {
     var body: some View {
         ZStack {
             backgroundBuilder()
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+//                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
             VStack(spacing: 12) {
                 HStack {
@@ -33,9 +33,10 @@ struct CardContainer<Content: View, Trailing: View, Background: View>: View {
                 }
                 contentBuilder()
             }
-            .padding(16)
+            .padding(.horizontal, 16)
         }
+        
         .adaptiveGlassBackground(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(color: .black.opacity(0.1), radius: 12, x: 0, y: 10)
+        //.shadow(color: .black.opacity(0.1), radius: 12, x: 0, y: 10)
     }
 }
