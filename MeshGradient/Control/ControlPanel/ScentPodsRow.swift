@@ -1,6 +1,14 @@
+//
+//  ScentPodsRow.swift
+//  MeshGradient
+//
+//  Created by Dajun Xian on 9/25/25.
+//
+
+
 import SwiftUI
 
-struct HueCircles: View {
+struct ScentPodsRow: View {
     let names: [String]
     let colorDict: [String: Color]
     let included: Set<String>
@@ -11,7 +19,7 @@ struct HueCircles: View {
     // Visual constants
     private let diameter: CGFloat = 28
     private let ringWidth: CGFloat = 3
-    private let focusScale: CGFloat = 1.08
+    private let focusScale: CGFloat = 1.1
 
     var body: some View {
         GeometryReader { geo in
@@ -76,7 +84,7 @@ struct HueCircles: View {
                 }
             }
             .scaleEffect(isFocused ? focusScale : 1.0)
-            .animation(.spring(response: 0.25, dampingFraction: 0.9), value: isFocused)
+            .animation(.spring(response: 0.7, dampingFraction: 0.5), value: isFocused)
             .opacity(isAdded || canSelectMore ? 1 : 0.85)
         }
         .buttonStyle(.plain)

@@ -14,7 +14,7 @@
 		DCEFA2412E82116F005DB683 /* Exceptions for "MeshGradient" folder in "MeshGradient" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Control/DeviceViews/Scanner/SupportedSymbologies.swift,
+				Control/DeviceMenu/Scanner/SupportedSymbologies.swift,
 			);
 			target = DCC163192E6A565B00A7DA67 /* MeshGradient */;
 		};
@@ -25,7 +25,7 @@
 			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
 			buildPhase = DCC163182E6A565B00A7DA67 /* Resources */;
 			membershipExceptions = (
-				Control/DeviceViews/Scanner/SupportedSymbologies.swift,
+				Control/DeviceMenu/Scanner/SupportedSymbologies.swift,
 			);
 		};
 /* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */

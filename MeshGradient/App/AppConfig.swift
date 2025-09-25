@@ -43,7 +43,7 @@ extension AppConfig {
             return GradientCircleTokens(
                 glowStartInset: -4,
                 glowRadiusAdded: 80,
-                glowSoftness: 68,
+                glowSoftness: 50,
                 glowOpacity: 0.7,
                 rimWidth: 8,
                 colorUpperBound: 0.8,

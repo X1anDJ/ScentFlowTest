@@ -8,7 +8,7 @@ struct GradientContainerCircle: View {
     var isTemplate: Bool = false
     var meshOpacity: Double = 1.0
     
-    // Power behavior mirrored from PowerFanGroup:
+    // Power behavior mirrored from PowerButtonRow:
     var isOn: Bool = false
     var onToggle: () -> Void = { }
     
@@ -28,7 +28,7 @@ struct GradientContainerCircle: View {
             ZStack {
                 // Mesh-based halo extending beyond the ring
                 if !isTemplate {
-                    MeshHaloFromMesh(
+                    MeshHaloShadowFromMesh(
                         colors: displayColors,
                         animate: animate,
                         startDelta: tokens.glowStartInset,
@@ -43,7 +43,10 @@ struct GradientContainerCircle: View {
                 
                 // Fill to block halo from bleeding inward
                 Circle()
-                    .fill(.background)
+                    .fill(
+                        .background
+                        
+                    )
                     .opacity(animate ? 0.8 : 0.4)
                     .shadow(
                         color: baseShadow.opacity(animate ? 0.3 : 1.0),
@@ -51,18 +54,9 @@ struct GradientContainerCircle: View {
                     )
                     .animation(.spring(response: 0.6, dampingFraction: 0.4), value: animate)
                 
-                //            GeometryReader { geo in
-                //                let r = min(geo.size.width, geo.size.height) / 2
-                //                Circle()
-                //                    .fill(Theme.CircleFill.gradient(for: colorScheme, radius: r * 3))
-                //                    .opacity(animate ? 0.0 : 1.0)
-                //                    .animation(.spring(response: 0.85, dampingFraction: 0.4), value: animate)
-                //            }
-                //            .aspectRatio(1, contentMode: .fit)
-                
                 
                 Circle()
-                    .inset(by: tokens.rimWidth)
+                    //.inset(by: tokens.rimWidth)
                     .fill(
                         RadialGradient(
                             gradient: Gradient(stops: [
@@ -87,17 +81,18 @@ struct GradientContainerCircle: View {
                         )
                     )
                     .opacity(animate ? 0.0 : 1.0)
-                    .animation(.spring(response: 0.6, dampingFraction: 0.4), value: animate)
+                    .animation(.easeInOut(duration: fadingDuration), value: animate)
+//                    .animation(.spring(response: 0.6, dampingFraction: 0.4), value: animate)
                 
                 // Glass ring (always visible)
-                GlassRing(width: tokens.rimWidth)
+                GlassRing(width: tokens.rimWidth, isOn: animate)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
-                
+                    .animation(.spring(response: 0.6, dampingFraction: 0.4), value: animate)
                 
                 // Main mesh content inside the ring
                 MeshColorCircle(colors: displayColors, animate: animate)
-                    .padding(tokens.rimWidth)
+                    //.padding(tokens.rimWidth)
                     .opacity(meshOpacity)
                 // Fade timing for mesh (decoupled from the spring)
                     .animation(.easeInOut(duration: fadingDuration), value: meshOpacity)
@@ -105,8 +100,8 @@ struct GradientContainerCircle: View {
             .aspectRatio(1, contentMode: .fit)
             // Power-driven raise/drop ONLY
             .scaleEffect(animate ? 1.0 : 0.95)
-            .animation(.spring(response: 0.6, dampingFraction: 0.4), value: animate) // scoped to scale
-//            
+            .animation(.spring(response: 0.4, dampingFraction: 0.4), value: animate) // scoped to scale
+//
 //            // Power Button Testing
 //            if !isTemplate {
 //                // Center power button overlay (60x60), icon-only.
@@ -150,6 +145,7 @@ struct GradientContainerCircle: View {
 
 private struct GlassRing: View {
     let width: CGFloat
+    var isOn: Bool
     
     var body: some View {
         GeometryReader { geo in
@@ -157,37 +153,88 @@ private struct GlassRing: View {
             let shape = Circle()
             
             shape
-                .strokeBorder(.ultraThinMaterial, lineWidth: width)
-                .overlay(
-                    shape.strokeBorder(Color.white.opacity(0.25), lineWidth: 1)
+                .strokeBorder(
+//                    Color.gray.opacity(0.4),
+//                    lineWidth: width
+                    
+                    LinearGradient(
+                        colors: [
+                            isOn ? .white.opacity(0.15) : .clear ,
+                            .black.opacity(0.1),
+                            isOn ? .gray.opacity(0.1) : .clear
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ) ,
+                    lineWidth: width
                 )
+                .overlay {
+                    if isOn {
+                        shape
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [
+                                        .white.opacity(0.25),
+                                        .gray.opacity(0.3),
+                                        .white.opacity(0.1)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
+                            .blendMode(.overlay)
+                            .opacity(0.9)
+                    } else {
+                        shape
+                            .strokeBorder(Color.white.opacity(0.15), lineWidth: 1)
+                    }
+                }
+
                 .overlay(
                     shape
-                        .inset(by: width - 1)
+                        .inset(by: width - 1)   // Inner line
                         .strokeBorder(Color.black.opacity(0.18), lineWidth: 1)
                         .blur(radius: 0.6)
-                )
-                .overlay(
-                    shape
-                        .strokeBorder(
-                            LinearGradient(
-                                colors: [
-                                    .white.opacity(0.48),
-                                    .white.opacity(0),
-                                    .white.opacity(0.32)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                        .blendMode(.overlay)
-                        .opacity(0.9)
                 )
                 .compositingGroup()
                 .frame(width: side, height: side)
         }
         .aspectRatio(1, contentMode: .fit)
         .transaction { $0.animation = nil }
+    }
+}
+
+
+struct GradientContainerCircle_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            // Light mode, powered on
+            GradientContainerCircle(
+                colors: [.red, .orange, .yellow, .green, .blue, .purple],
+                animate: true,
+                isTemplate: false,
+                meshOpacity: 1.0,
+                isOn: true,
+                onToggle: {}
+            )
+            .padding()
+            .previewDisplayName("Light - On")
+            .preferredColorScheme(.light)
+
+            // Dark mode, powered off
+            GradientContainerCircle(
+                colors: [ ],
+                animate: true,
+                isTemplate: false,
+                meshOpacity: 0.6,
+                isOn: true,
+                onToggle: {}
+            )
+            .padding()
+            .previewDisplayName("Dark - Off")
+            .preferredColorScheme(.dark)
+        }
+        .previewLayout(.sizeThatFits)
     }
 }

@@ -1,4 +1,20 @@
 //
+//  ScentControllerSlider.swift
+//  MeshGradient
+//
+//  Created by Dajun Xian on 9/25/25.
+//
+
+
+//
+//  ScentControllerExpanded.swift
+//  MeshGradient
+//
+//  Created by Dajun Xian on 9/25/25.
+//
+
+
+//
 //  ColorRow.swift
 //  MeshGradient
 //
@@ -9,7 +25,7 @@
 import SwiftUI
 
 /// Reusable scent intensity row used by both Controls and Customize Pod.
-struct ColorRow: View {
+struct ScentControllerSlider: View {
     let name: String
     let color: Color
     /// 0...1 displayed percent
@@ -23,16 +39,17 @@ struct ColorRow: View {
             Button(action: onFocusOrToggle) {
                 Circle()
                     .fill(color)
-                    .frame(width: 22, height: 22)
-                    .overlay(Circle().stroke(.white.opacity(0.3), lineWidth: 1))
+                    .frame(width: 8, height: 8)
+                    //.overlay(Circle().stroke(.white.opacity(0.3), lineWidth: 1))
             }
             .buttonStyle(.plain)
+            
             
 
             Text(name + " Scent")
                 .lineLimit(1)
                 .font(.footnote)
-                .frame(width: 90, alignment: .leading)
+                .frame(width: 100, alignment: .leading)
                 
 
             Slider(value: Binding(
@@ -57,7 +74,6 @@ struct ColorRow: View {
 //                .frame(width: 44, alignment: .trailing)
 //                .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, 8)
         .padding(.vertical, 6)
 //        .adaptiveGlassBackground(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }

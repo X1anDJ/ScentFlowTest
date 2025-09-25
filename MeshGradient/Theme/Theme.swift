@@ -75,7 +75,7 @@ extension Theme {
     enum CircleFill {
         static let innerLight = Color.gray.opacity(0.1)
         static let outerLight = Color.gray.opacity(0)
-        static let innerDark  = Color.gray.opacity(0.20)
+        static let innerDark  = Color.gray.opacity(0.14)
         static let outerDark  = Color.gray.opacity(0.02)
 
         static func gradient(for scheme: ColorScheme, radius: CGFloat) -> RadialGradient {

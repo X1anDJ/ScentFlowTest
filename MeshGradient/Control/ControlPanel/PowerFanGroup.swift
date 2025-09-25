@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Parent hierarchy control: shows a power button; when on, a fan slider appears.
-struct PowerFanGroup: View {
+struct PowerButtonRow: View {
     let isOn: Bool
     let speed: Double            // 0...1
     let onToggle: () -> Void

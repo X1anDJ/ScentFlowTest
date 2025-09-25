@@ -1,6 +1,14 @@
+//
+//  ScentControllerStepper.swift
+//  MeshGradient
+//
+//  Created by Dajun Xian on 9/25/25.
+//
+
+
 import SwiftUI
 
-struct OpacityControl: View {
+struct ScentControllerStepper: View {
     let focused: Scent?
     @Binding var value: Double
     

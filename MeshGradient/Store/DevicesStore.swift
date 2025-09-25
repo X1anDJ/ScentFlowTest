@@ -1,7 +1,9 @@
 // DevicesStore.swift
 import SwiftUI
 import Combine
- 
+
+// (Remove the old DeviceSettings struct) 
+
 // New profiles now store the whole current settings snapshot
 struct DeviceProfile: Identifiable, Codable, Equatable {
     let id: UUID

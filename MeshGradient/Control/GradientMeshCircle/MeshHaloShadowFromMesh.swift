@@ -13,17 +13,17 @@ import SwiftUI
 /// Uses the mesh itself to create a halo that extends beyond the ring.
 /// The mesh is scaled to reach the target end radius and is masked with a radial ramp
 /// that stays fully opaque until `startRadius`, then fades to 0 by `endRadius`.
-struct MeshHaloFromMesh: View {
+struct MeshHaloShadowFromMesh: View {
     let colors: [Color]
     var animate: Bool = true
 
     /// Additive deltas (points) relative to the circle rim (side * 0.5)
     /// startDelta < 0 means begin inside the rim; > 0 means outside.
-    var startDelta: CGFloat = -4
+    var startDelta: CGFloat = -1
     var endDelta: CGFloat = 20
 
     /// Visual tuning
-    var softness: CGFloat = 20
+    var softness: CGFloat = 1
     var opacity: Double = 0.9
 
     var body: some View {

@@ -18,11 +18,11 @@ struct InlineStepperStyle {
 
     // Dividers
     var dividerHeight: CGFloat = 22
-    var dividerOpacity: CGFloat = 0.2
+    var dividerOpacity: CGFloat = 0.4
 
     // Stroke & background
     var strokeWidth: CGFloat = 1
-    var backgroundMaterial: Material = .ultraThinMaterial
+    var backgroundMaterial: Material = .thinMaterial
 
     // Shadow
     var shadowColor: Color = .black.opacity(0.06)

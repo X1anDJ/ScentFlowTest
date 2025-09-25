@@ -205,7 +205,7 @@ private struct MixingPanelContent: View {
 
                 VStack(spacing: 10) {
                     ForEach(0..<activeColors, id: \.self) { i in
-                        ColorRow(
+                        ScentControllerSlider(
                             name: scentNames[i],
                             color: colorPickers[i],
                             displayed: intensities[i],

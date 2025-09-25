@@ -43,7 +43,7 @@ struct ControlsSection: View {
     var body: some View {
         VStack(spacing: 16) {
             // Parent: Power + Fan
-            PowerFanGroup(
+            PowerButtonRow(
                 isOn: isPowerOn,
                 speed: fanSpeed,
                 onToggle: onTogglePower,
@@ -60,7 +60,7 @@ struct ControlsSection: View {
             }) {
                 VStack(spacing: 16) {
                     // Hue chips row
-                    HueCircles(
+                    ScentPodsRow(
                         names: names,
                         colorDict: colorDict,
                         included: included,
@@ -89,7 +89,7 @@ struct ControlsSection: View {
                                 get: { opacities[f] ?? 0 },
                                 set: { onChangeOpacity(f, $0) }
                             )
-                            OpacityControl(focused: focusedScent, value: binding)
+                            ScentControllerStepper(focused: focusedScent, value: binding)
                                 .frame(height: ControlsUI.opacityRowHeight, alignment: .center)
                         }
                     }
@@ -108,7 +108,7 @@ struct ControlsSection: View {
                         } else {
                             VStack(spacing: 10) {
                                 ForEach(names.filter { included.contains($0) }, id: \.self) { name in
-                                    ColorRow(
+                                    ScentControllerSlider(
                                         name: name,
                                         color: colorDict[name] ?? .gray,
                                         displayed: displayed(from: opacities[name] ?? 0),

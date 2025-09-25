@@ -22,20 +22,6 @@ struct TemplatesSection: View {
 
     var body: some View {
         VStack(spacing: 12) {
-//            HStack {
-//                Spacer()
-//
-//                Button {
-//                    newTemplateName = "Mix \(store.templates.count + 1)"
-//                    showingNameAlert = true
-//                } label: {
-//                    Label("Save", systemImage: "plus.circle.fill").labelStyle(.titleAndIcon)
-//                }
-//                .buttonStyle(.glass)
-//                .controlSize(.regular)
-//                
-//                Spacer()
-//            }
 
             if store.templates.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
