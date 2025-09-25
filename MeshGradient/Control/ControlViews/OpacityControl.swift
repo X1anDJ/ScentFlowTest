@@ -18,7 +18,7 @@ struct OpacityControl: View {
                     .sliderTintGray()
             } else {
                 Text("Select a scent to adjust intensity")
-                    .font(.subheadline).opacity(0.6)
+                    .font(.headline).opacity(0.6)
             }
         }
     }

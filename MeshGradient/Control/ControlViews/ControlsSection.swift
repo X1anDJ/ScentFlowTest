@@ -1,6 +1,22 @@
+//
+//  ControlsSection.swift
+//  MeshGradient
+//
+//  Created by Dajun Xian on 9/24/25.
+//
+
+
 import SwiftUI
 
-struct ControlsCard: View {
+// MARK: - Controls content (no outer CardContainer)
+struct ControlsSection: View {
+    
+    // ControlsCard.swift (top of file or just above ControlsSection)
+    private enum ControlsUI {
+        static let opacityRowHeight: CGFloat = 55   // collapsed row height target
+    }
+
+    
     // MARK: - Parent (Device) — values + intents (no bindings here)
     let isPowerOn: Bool
     let fanSpeed: Double
@@ -25,51 +41,71 @@ struct ControlsCard: View {
     @State private var isExpanded = false
 
     var body: some View {
-        // Use explicit trailing builder so generics always infer
-        CardContainer(title: "Controls", trailing: { EmptyView() }) {
-            VStack(spacing: 16) {
-                // Parent: Power + Fan
-                PowerFanGroup(
-                    isOn: isPowerOn,
-                    speed: fanSpeed,
-                    onToggle: onTogglePower,
-                    onChangeSpeed: onChangeFanSpeed
-                )
+        VStack(spacing: 16) {
+            // Parent: Power + Fan
+            PowerFanGroup(
+                isOn: isPowerOn,
+                speed: fanSpeed,
+                onToggle: onTogglePower,
+                onChangeSpeed: onChangeFanSpeed
+            )
 
-                // Child: Scents
-                ChildCard(title: "Pods", trailing: { childExpandButton }) {
-                    VStack(spacing: 16) {
-                        // Hue chips row
-                        HueCircles(
-                            names: names,
-                            colorDict: colorDict,
-                            included: included,
-                            focusedName: focusedName,
-                            canSelectMore: canSelectMore,
-                            onTap: onTapHue
-                        )
+            // Child: Scents
+            ChildCard(title: "Pods", trailing: {
+                if included.count > 1 {
+                    childExpandButton
+                }
+                    
+                
+            }) {
+                VStack(spacing: 16) {
+                    // Hue chips row
+                    HueCircles(
+                        names: names,
+                        colorDict: colorDict,
+                        included: included,
+                        focusedName: focusedName,
+                        canSelectMore: canSelectMore,
+                        onTap: onTapHue
+                    )
 
-                        // Collapsed: single slider for focused scent
-                        if !isExpanded, let f = focusedName {
+                    if !isExpanded {
+                        if included.isEmpty {
+                            // Placeholder keeps the card’s folded height stable
+                            Text("No active pods")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .frame(height: ControlsUI.opacityRowHeight, alignment: .center)
+                                .accessibilityLabel("No scents added. Tap a pod to add a scent.")
+                            
+                        } else if let f = focusedName {
                             let focusedScent = Scent(
                                 name: f,
                                 color: colorDict[f] ?? .gray,
                                 defaultIntensity: 0
                             )
-
                             let binding = Binding<Double>(
                                 get: { opacities[f] ?? 0 },
                                 set: { onChangeOpacity(f, $0) }
                             )
-
-                            OpacityControl(
-                                focused: focusedScent,
-                                value: binding
-                            )
+                            OpacityControl(focused: focusedScent, value: binding)
+                                .frame(height: ControlsUI.opacityRowHeight, alignment: .center)
                         }
+                    }
 
-                        // Expanded: per-scent rows with sliders
-                        if isExpanded && !included.isEmpty {
+                    // Expanded: per-scent rows with sliders
+                    if isExpanded  {
+                        
+                        if included.isEmpty {
+                            // Placeholder keeps the card’s folded height stable
+                            Text("No active pods")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .frame(height: ControlsUI.opacityRowHeight, alignment: .center)
+                                .accessibilityLabel("No scents added. Tap a pod to add a scent.")
+                        } else {
                             VStack(spacing: 10) {
                                 ForEach(names.filter { included.contains($0) }, id: \.self) { name in
                                     ColorRow(
@@ -85,10 +121,15 @@ struct ControlsCard: View {
                                 }
                             }
                         }
+                        
                     }
+                    
                 }
+                
             }
+            
         }
+        .padding(.bottom, 16)
         .onAppear {
             // Ensure parent knows the initial state
             onExpansionChange(isExpanded)
@@ -143,6 +184,7 @@ private struct ChildCard<Content: View, Trailing: View>: View {
                 trailingBuilder()
             }
             content
+            Spacer()
         }
         .padding(12)
         .adaptiveGlassBackground(RoundedRectangle(cornerRadius: 14, style: .continuous))

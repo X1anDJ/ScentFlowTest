@@ -1,6 +1,15 @@
+//
+//  TemplatesSection.swift
+//  MeshGradient
+//
+//  Created by Dajun Xian on 9/24/25.
+//
+
+
 import SwiftUI
 
-struct TemplatesCard: View {
+// MARK: - Templates content (no outer CardContainer)
+struct TemplatesSection: View {
     let names: [String]
     let colorDict: [String: Color]
     let included: Set<String>                 // current mix
@@ -14,11 +23,10 @@ struct TemplatesCard: View {
     @State private var newTemplateName: String = ""
 
     var body: some View {
-        CardContainer(title: "Templates") {
-            // trailing actions
+        VStack(spacing: 12) {
             HStack(spacing: 8) {
+                Spacer()
                 Button {
-                    // Pre-fill with a sensible default; user can edit in the alert
                     newTemplateName = "Mix \(templates.count + 1)"
                     showingNameAlert = true
                 } label: {
@@ -28,12 +36,13 @@ struct TemplatesCard: View {
                 .buttonStyle(.glass)
                 .controlSize(.small)
             }
-        } content: {
+
             if templates.isEmpty {
                 Text("No templates yet. Tap **Save** to capture the current mix.")
+                    .multilineTextAlignment(.center)
                     .font(.callout)
                     .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             } else {
                 TemplatesGallery(
                     names: names,
@@ -47,6 +56,8 @@ struct TemplatesCard: View {
                     }
                 )
             }
+            
+            Spacer()
         }
         .alert("Save Template", isPresented: $showingNameAlert) {
             TextField("Template name", text: $newTemplateName)

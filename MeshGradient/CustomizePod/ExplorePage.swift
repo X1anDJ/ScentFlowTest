@@ -18,8 +18,8 @@ struct ExplorePage: View {
                 } label: {
                     CardWithShadowContainer(
                         title: "Customize Pod",
-                        height: 260,
-                        background: { Image("colorInk2").resizable().scaledToFill() },
+                        height: 120,
+                        background: { Image("colorInk2").resizable().scaledToFit() },
                         label: { Text("Unique scent make by you").font(.subheadline) }
                     )
 //                    .padding(.horizontal, 16) // <- add gutters here
@@ -27,16 +27,20 @@ struct ExplorePage: View {
                 .buttonStyle(.plain)
 
 
-
-
-                // Card 2: Scents Templates (placeholder)
-                CardContainer(title: "Scents Templates") {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Coming soon")
-                            .foregroundStyle(.secondary)
-                        // You can later navigate to your templates screen here.
-                    }
+                NavigationLink {
+                    CustomizePodPage()
+                } label: {
+                    CardWithShadowContainer(
+                        title: "Master Templates",
+                        height: 120,
+                        background: { Image("mesh").resizable().scaledToFit() },
+                        label: { Text("Coming soon").font(.subheadline) }
+                    )
+//                    .padding(.horizontal, 16) // <- add gutters here
                 }
+                .buttonStyle(.plain)
+                
+                Spacer()
             }
             .padding(16)
         }

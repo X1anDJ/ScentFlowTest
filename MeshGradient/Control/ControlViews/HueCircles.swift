@@ -17,7 +17,7 @@ struct HueCircles: View {
     private let diameter: CGFloat = 28
     private let ringWidth: CGFloat = 3
     private let focusScale: CGFloat = 1.08
-    private let segmentPadding: CGFloat = 4  // left padding within each equal segment
+    private let segmentPadding: CGFloat = 6  // left padding within each equal segment
 
     var body: some View {
         HStack(spacing: 0) {
