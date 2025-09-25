@@ -5,12 +5,12 @@ struct ControlPage: View {
     private enum UI {
         static let wheelPadding: CGFloat    = 94
         static let baseVPadding: CGFloat    = 24
-        static let expandedScale: CGFloat   = 0.80
+        static let expandedScale: CGFloat   = 0.85
         static let collapsedScale: CGFloat  = 1.00
         static let cardHPad: CGFloat        = 16
         static let cardBottomPad: CGFloat   = 16
         static let cardMaxHeight: CGFloat?  = nil
-        static let collapsedCardHeight: CGFloat = 310
+        static let collapsedCardHeight: CGFloat = 320
     }
 
 
@@ -100,49 +100,55 @@ struct ControlPage: View {
                     let shouldAutoSize = (segment == .controls && controlsExpanded)
 
                     PanelContainer(title: "", trailing: { EmptyView() }) {
-                        Picker("", selection: $segment) {
-                            Text("Controls").tag(Segment.controls)
-                            Text("Templates").tag(Segment.templates)
-                        }
-                        .pickerStyle(.segmented)
-
-                        Group {
-                            switch segment {
-                            case .controls:
-                                ControlsSection(
-                                    isPowerOn: vm.isPowerOn,
-                                    fanSpeed: vm.fanSpeed,
-                                    onTogglePower: { vm.togglePower() },
-                                    onChangeFanSpeed: { vm.setFanSpeed($0) },
-                                    names: vm.canonicalOrder,
-                                    colorDict: vm.colorDict,
-                                    included: vm.included,
-                                    focusedName: vm.focusedName,
-                                    canSelectMore: vm.canSelectMore,
-                                    opacities: vm.opacities,
-                                    onTapHue: { vm.toggle($0) },
-                                    onChangeOpacity: { name, eff in vm.setOpacity(eff, for: name) },
-                                    onExpansionChange: { expanded in
-                                        withAnimation(.spring(response: 0.65, dampingFraction: 0.9)) {
-                                            controlsExpanded = expanded
-                                        }
-                                    }
-                                )
-
-                            case .templates:
-                                TemplatesSection(
-                                    names: vm.canonicalOrder,
-                                    colorDict: vm.colorDict,
-                                    included: vm.included,
-                                    opacities: vm.opacities,
-                                    onApplyTemplate: { inc, ops in
-                                        vm.applyTemplate(included: inc, opacities: ops)
-                                    },
-                                    store: templatesStore
-                                )
+                        VStack {
+                            Picker("", selection: $segment) {
+                                Text("Controls").tag(Segment.controls)
+                                Text("Templates").tag(Segment.templates)
                             }
+                            .pickerStyle(.segmented)
+                            .padding(.vertical, 16)
+
+                            Group {
+                                switch segment {
+                                case .controls:
+                                    ControlsSection(
+                                        isPowerOn: vm.isPowerOn,
+                                        fanSpeed: vm.fanSpeed,
+                                        onTogglePower: { vm.togglePower() },
+                                        onChangeFanSpeed: { vm.setFanSpeed($0) },
+                                        names: vm.canonicalOrder,
+                                        colorDict: vm.colorDict,
+                                        included: vm.included,
+                                        focusedName: vm.focusedName,
+                                        canSelectMore: vm.canSelectMore,
+                                        opacities: vm.opacities,
+                                        onTapHue: { vm.toggle($0) },
+                                        onChangeOpacity: { name, eff in vm.setOpacity(eff, for: name) },
+                                        onExpansionChange: { expanded in
+                                            withAnimation(.spring(response: 0.65, dampingFraction: 0.9)) {
+                                                controlsExpanded = expanded
+                                            }
+                                        }
+                                    )
+
+                                case .templates:
+                                    TemplatesSection(
+                                        names: vm.canonicalOrder,
+                                        colorDict: vm.colorDict,
+                                        included: vm.included,
+                                        opacities: vm.opacities,
+                                        onApplyTemplate: { inc, ops in
+                                            vm.applyTemplate(included: inc, opacities: ops)
+                                        },
+                                        store: templatesStore
+                                    )
+                                }
+                            }
+                            .id(segment)
                         }
-                        .id(segment)
+                        .padding(.horizontal, 16)
+                        
+                        
                         
                         // Hug the child's intrinsic height when expanded
                     }

@@ -22,24 +22,36 @@ struct TemplatesSection: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            HStack {
-                Spacer()
-                Button {
-                    newTemplateName = "Mix \(store.templates.count + 1)"
-                    showingNameAlert = true
-                } label: {
-                    Label("Save", systemImage: "plus.circle.fill").labelStyle(.titleAndIcon)
-                }
-                .buttonStyle(.glass)
-                .controlSize(.small)
-            }
+//            HStack {
+//                Spacer()
+//
+//                Button {
+//                    newTemplateName = "Mix \(store.templates.count + 1)"
+//                    showingNameAlert = true
+//                } label: {
+//                    Label("Save", systemImage: "plus.circle.fill").labelStyle(.titleAndIcon)
+//                }
+//                .buttonStyle(.glass)
+//                .controlSize(.regular)
+//                
+//                Spacer()
+//            }
 
             if store.templates.isEmpty {
-                Text("No templates yet. Tap **Save** to capture the current mix.")
-                    .multilineTextAlignment(.center)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 14) {
+                        SaveTemplateCard(
+                            title: "Save",
+                           // subtitle: "Capture current mix"
+                        ) {
+                            // Same behavior as your Save button
+                            newTemplateName = "Mix \(store.templates.count + 1)"
+                            showingNameAlert = true
+                        }
+                    }
+//                    .padding(.vertical, 2)
+//                    .padding(.top, 2)
+                }
             } else {
                 TemplatesGallery(
                     names: names,
@@ -49,8 +61,25 @@ struct TemplatesSection: View {
                     onDeleteTemplate: { t in store.remove(t) }
                 )
             }
-
+            
             Spacer()
+            
+            HStack {
+                Spacer()
+                
+                Button {
+                    newTemplateName = "Mix \(store.templates.count + 1)"
+                    showingNameAlert = true
+                } label: {
+                    Label("Save", systemImage: "plus.circle.fill").labelStyle(.titleAndIcon)
+                }
+                .buttonStyle(.glass)
+                .controlSize(.large)
+                
+                Spacer()
+            }
+            .padding(.bottom, 16)
+            
         }
         .alert("Save Template", isPresented: $showingNameAlert) {
             TextField("Template name", text: $newTemplateName)

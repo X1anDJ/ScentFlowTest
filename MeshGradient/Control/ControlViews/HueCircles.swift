@@ -72,7 +72,7 @@ struct HueCircles: View {
                     Circle()
                         .fill(Color.white)
                         .frame(width: diameter * 0.25, height: diameter * 0.25)
-                        .shadow(radius: 1, x: 0, y: 0)
+                        .shadow(color: Color.white, radius: 1, x: 0, y: 0)
                 }
             }
             .scaleEffect(isFocused ? focusScale : 1.0)

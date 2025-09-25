@@ -159,7 +159,7 @@ private struct GlassRing: View {
             shape
                 .strokeBorder(.ultraThinMaterial, lineWidth: width)
                 .overlay(
-                    shape.strokeBorder(Color.white.opacity(0.55), lineWidth: 1)
+                    shape.strokeBorder(Color.white.opacity(0.25), lineWidth: 1)
                 )
                 .overlay(
                     shape
@@ -172,8 +172,8 @@ private struct GlassRing: View {
                         .strokeBorder(
                             LinearGradient(
                                 colors: [
-                                    .white.opacity(0.58),
-                                    .white.opacity(0.06),
+                                    .white.opacity(0.48),
+                                    .white.opacity(0),
                                     .white.opacity(0.32)
                                 ],
                                 startPoint: .topLeading,

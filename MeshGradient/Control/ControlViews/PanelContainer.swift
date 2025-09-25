@@ -12,7 +12,7 @@ import SwiftUI
 /// Works with both explicit and omitted `trailing:` uses.
 struct PanelContainer<Content: View, Trailing: View, Background: View>: View {
     let title: String
-    private let trailingBuilder: () -> Trailing
+   // private let trailingBuilder: () -> Trailing
     private let contentBuilder: () -> Content
     private let backgroundBuilder: () -> Background
 
@@ -23,7 +23,7 @@ struct PanelContainer<Content: View, Trailing: View, Background: View>: View {
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.title = title
-        self.trailingBuilder = trailing
+        //self.trailingBuilder = trailing
         self.backgroundBuilder = background
         self.contentBuilder = content
     }
@@ -32,15 +32,15 @@ struct PanelContainer<Content: View, Trailing: View, Background: View>: View {
         ZStack {
             backgroundBuilder()
 //                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-
-            VStack(spacing: 12) {
-                HStack {
-                    trailingBuilder()
-                }
-                contentBuilder()
-                    .frame(maxHeight: .infinity, alignment: .top)
-            }
-            .padding(.horizontal, 16)
+            
+            contentBuilder()
+                .frame(maxHeight: .infinity, alignment: .top)
+//            VStack(spacing: 12) {
+//                HStack {
+//                    trailingBuilder()
+//                }
+//            }
+//            .padding(.horizontal, 16)
         }
         
         .adaptiveGlassBackground(RoundedRectangle(cornerRadius: 16, style: .continuous))
