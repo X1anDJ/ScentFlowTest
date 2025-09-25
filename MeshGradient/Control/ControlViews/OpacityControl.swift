@@ -3,23 +3,32 @@ import SwiftUI
 struct OpacityControl: View {
     let focused: Scent?
     @Binding var value: Double
-
+    
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        HStack(spacing: 0) {
             if let focused {
-                HStack {
-                    Text("\(focused.name) Scent")
-                        .font(.subheadline).opacity(0.8)
-                    Spacer()
-                    Text("\(Int((value / AppConfig.maxIntensity) * 100))%")
-                        .font(.footnote).opacity(0.6)
-                }
-                Slider(value: $value, in: AppConfig.minIntensity...AppConfig.maxIntensity)
-                    .sliderTintGray()
+                Text("\(focused.name) Scent")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                InlineStepper(
+                    value: $value,
+                    range: AppConfig.minIntensity ... AppConfig.maxIntensity,
+                    step: AppConfig.maxIntensity * 0.25,
+                    format: { v in
+                        // Show a clear, bold percentage
+                        "\(Int((v / AppConfig.maxIntensity) * 100))%"
+                    }
+                )
+                .padding(.leading, 12)
             } else {
                 Text("Select a scent to adjust intensity")
-                    .font(.headline).opacity(0.6)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
         }
+
     }
 }

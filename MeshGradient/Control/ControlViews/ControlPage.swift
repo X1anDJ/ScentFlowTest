@@ -1,25 +1,22 @@
 import SwiftUI
-
-
-
-
 struct ControlPage: View {
     
     // MARK: - Tunables
     private enum UI {
-        static let baseWheelSize: CGFloat  = 220
-        static let baseVPadding: CGFloat   = 24
-        static let expandedScale: CGFloat  = 0.80
-        static let collapsedScale: CGFloat = 1.00
-        static let cardHPad: CGFloat       = 16
-        static let cardBottomPad: CGFloat  = 22
-        // Optional cap for the card height (set to nil to disable)
-        static let cardMaxHeight: CGFloat? = nil
-        static let collapsedCardHeight: CGFloat = 400
+        static let wheelPadding: CGFloat    = 94
+        static let baseVPadding: CGFloat    = 24
+        static let expandedScale: CGFloat   = 0.80
+        static let collapsedScale: CGFloat  = 1.00
+        static let cardHPad: CGFloat        = 16
+        static let cardBottomPad: CGFloat   = 16
+        static let cardMaxHeight: CGFloat?  = nil
+        static let collapsedCardHeight: CGFloat = 310
     }
+
 
     @StateObject private var vm = GradientWheelViewModel()
     @StateObject private var devices = DevicesStore()
+    @StateObject private var templatesStore = TemplatesStore()
 
     @State private var showScanner = false
 
@@ -32,6 +29,10 @@ struct ControlPage: View {
     }
     @State private var segment: Segment = .controls
 
+    private func saveSnapshot() {
+        devices.updateCurrentSettings(vm.snapshot())
+    }
+    
     var body: some View {
         GeometryReader { _ in
             // Compute dynamic scale & vertical spacing
@@ -47,14 +48,14 @@ struct ControlPage: View {
                             ForEach(devices.devices) { device in
                                 Button {
                                     devices.select(device.id)
-                                    vm.isPowerOn = device.settings.isPowerOn
-                                    vm.fanSpeed  = device.settings.fanSpeed
+                                    vm.load(from: device.settings)
                                 } label: {
                                     HStack(spacing: 8) {
                                         Image(systemName: "macmini.fill")
                                         Text(device.name).lineLimit(1).truncationMode(.tail)
                                     }
                                 }
+
                             }
                         }
                         Section("Add Device") {
@@ -82,7 +83,8 @@ struct ControlPage: View {
                         isOn: vm.isPowerOn,
                         onToggle: { vm.togglePower() }
                     )
-                    .frame(width: UI.baseWheelSize, height: UI.baseWheelSize)
+                    .aspectRatio(1, contentMode: .fit)   // keeps it square
+                    .padding(.horizontal, UI.wheelPadding)
                     .scaleEffect(wheelScale, anchor: .center)
                     .animation(.spring(response: 0.45, dampingFraction: 0.85), value: wheelScale)
                     .padding(.top, topPadding)
@@ -121,7 +123,7 @@ struct ControlPage: View {
                                     onTapHue: { vm.toggle($0) },
                                     onChangeOpacity: { name, eff in vm.setOpacity(eff, for: name) },
                                     onExpansionChange: { expanded in
-                                        withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
+                                        withAnimation(.spring(response: 0.65, dampingFraction: 0.9)) {
                                             controlsExpanded = expanded
                                         }
                                     }
@@ -135,13 +137,14 @@ struct ControlPage: View {
                                     opacities: vm.opacities,
                                     onApplyTemplate: { inc, ops in
                                         vm.applyTemplate(included: inc, opacities: ops)
-                                    }
+                                    },
+                                    store: templatesStore
                                 )
                             }
                         }
                         .id(segment)
+                        
                         // Hug the child's intrinsic height when expanded
-                        //.fixedSize(horizontal: false, vertical: shouldAutoSize)
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .padding(.horizontal, UI.cardHPad)
@@ -150,7 +153,8 @@ struct ControlPage: View {
                     .frame(maxWidth: .infinity, alignment: .bottom)
                     // Default: fixed height. Expanded: let SwiftUI compute intrinsic height.
                     .frame(height: shouldAutoSize ? nil : UI.collapsedCardHeight, alignment: .bottom)
-                    .animation(.spring(response: 0.45, dampingFraction: 0.9), value: shouldAutoSize)
+                    .shadow(radius: 6)
+                    .animation(.spring(response: 0.65, dampingFraction: 0.8), value: shouldAutoSize)
                 }
 
 
@@ -159,21 +163,20 @@ struct ControlPage: View {
         .navigationTitle("ScentsFlow")
         .sheet(isPresented: $showScanner) { ScannerSheet() }
 
-        // Keep per-device settings in sync
-        .onChange(of: vm.isPowerOn) { _, new in
-            devices.updateCurrentSettings(.init(isPowerOn: new, fanSpeed: vm.fanSpeed))
-        }
-        .onChange(of: vm.fanSpeed) { _, new in
-            devices.updateCurrentSettings(.init(isPowerOn: vm.isPowerOn, fanSpeed: new))
-        }
+        .onChange(of: vm.isPowerOn) { _, _ in saveSnapshot() }
+        .onChange(of: vm.fanSpeed)  { _, _ in saveSnapshot() }
+        .onChange(of: vm.included)  { _, _ in saveSnapshot() }
+        .onChange(of: vm.opacities) { _, _ in saveSnapshot() }
+        .onChange(of: vm.focusedName) { _, _ in saveSnapshot() }
         .onAppear {
             if let current = devices.selected {
-                vm.isPowerOn = current.settings.isPowerOn
-                vm.fanSpeed  = current.settings.fanSpeed
+                vm.load(from: current.settings) // load all on first show
             }
         }
     }
+    
 }
+
 
 // Helper to optionally cap height without affecting bottom alignment
 private struct MaxHeightIfProvided: ViewModifier {

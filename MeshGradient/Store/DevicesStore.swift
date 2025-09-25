@@ -1,28 +1,20 @@
-//
-//  DevicesStore.swift
-//  MeshGradient
-//
-//  Created by Dajun Xian on 9/11/25.
-//
-
+// DevicesStore.swift
 import SwiftUI
 import Combine
-
-struct DeviceSettings: Codable, Equatable {
-    var isPowerOn: Bool
-    var fanSpeed: Double        // 0...1
-}
-
+ 
+// New profiles now store the whole current settings snapshot
 struct DeviceProfile: Identifiable, Codable, Equatable {
     let id: UUID
     var name: String
     var isMock: Bool
-    var settings: DeviceSettings
+    var settings: CurrentSettingsV1
 
-    init(id: UUID = UUID(),
-         name: String,
-         isMock: Bool = false,
-         settings: DeviceSettings = .init(isPowerOn: false, fanSpeed: 0.5)) {
+    init(
+        id: UUID = UUID(),
+        name: String,
+        isMock: Bool = false,
+        settings: CurrentSettingsV1 = .init(isPowerOn: false, fanSpeed: 0.5)
+    ) {
         self.id = id
         self.name = name
         self.isMock = isMock
@@ -36,7 +28,7 @@ final class DevicesStore: ObservableObject {
     @Published var selectedID: UUID
 
     init(devices: [DeviceProfile]? = nil) {
-        // Default: current “real” device + a mock one
+        // Defaults keep working
         let defaults: [DeviceProfile] = [
             DeviceProfile(name: "Livingroom Hub",
                           isMock: false,
@@ -54,17 +46,16 @@ final class DevicesStore: ObservableObject {
         devices.first(where: { $0.id == selectedID })
     }
 
-    func select(_ id: UUID) {
-        selectedID = id
-    }
+    func select(_ id: UUID) { selectedID = id }
 
-    func updateCurrentSettings(_ settings: DeviceSettings) {
+    // Save whole snapshot
+    func updateCurrentSettings(_ snapshot: CurrentSettingsV1) {
         guard let idx = devices.firstIndex(where: { $0.id == selectedID }) else { return }
-        devices[idx].settings = settings
+        devices[idx].settings = snapshot
     }
 
-    func addDevice(_ profile: DeviceProfile) {
-        devices.append(profile)
-        selectedID = profile.id
+    // Helper to read the snapshot for the selected device
+    func currentSettings() -> CurrentSettingsV1? {
+        selected?.settings
     }
 }

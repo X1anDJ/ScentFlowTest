@@ -13,7 +13,7 @@ struct ControlsSection: View {
     
     // ControlsCard.swift (top of file or just above ControlsSection)
     private enum ControlsUI {
-        static let opacityRowHeight: CGFloat = 55   // collapsed row height target
+        static let opacityRowHeight: CGFloat = 26   // collapsed row height target
     }
 
     
@@ -75,7 +75,7 @@ struct ControlsSection: View {
                             Text("No active pods")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .frame(maxWidth: .infinity, alignment: .center)
                                 .frame(height: ControlsUI.opacityRowHeight, alignment: .center)
                                 .accessibilityLabel("No scents added. Tap a pod to add a scent.")
                             
@@ -102,7 +102,7 @@ struct ControlsSection: View {
                             Text("No active pods")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .frame(maxWidth: .infinity, alignment: .center)
                                 .frame(height: ControlsUI.opacityRowHeight, alignment: .center)
                                 .accessibilityLabel("No scents added. Tap a pod to add a scent.")
                         } else {
@@ -179,7 +179,7 @@ private struct ChildCard<Content: View, Trailing: View>: View {
         VStack(spacing: 12) {
             HStack {
                 Text(title)
-                    .font(.headline)
+                    .font(.subheadline.bold())
                 Spacer()
                 trailingBuilder()
             }

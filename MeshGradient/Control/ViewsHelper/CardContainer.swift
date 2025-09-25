@@ -28,6 +28,7 @@ struct CardContainer<Content: View, Trailing: View, Background: View>: View {
             VStack(spacing: 12) {
                 HStack {
                     Text(title).font(.headline)
+                        .padding(.top, 8)
                     Spacer()
                     trailingBuilder()
                 }

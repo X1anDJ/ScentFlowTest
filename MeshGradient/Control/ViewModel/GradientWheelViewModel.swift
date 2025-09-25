@@ -196,3 +196,40 @@ final class GradientWheelViewModel: ObservableObject {
         if isPowerOn { scheduleWheelRebuild() }
     }
 }
+
+// GradientWheelViewModel.swift
+extension GradientWheelViewModel {
+    // Build a snapshot of everything the user can tweak
+    func snapshot() -> CurrentSettingsV1 {
+        CurrentSettingsV1(
+            isPowerOn: isPowerOn,
+            fanSpeed: fanSpeed,
+            included: included,
+            opacities: opacities,
+            focusedName: focusedName
+        )
+    }
+
+    // Load a snapshot into the VM and rebuild if needed
+    func load(from s: CurrentSettingsV1) {
+        isPowerOn   = s.isPowerOn
+        fanSpeed    = s.fanSpeed
+        included    = s.included
+        opacities   = s.opacities
+        focusedName = s.focusedName
+
+        // Keep visual state consistent with the snapshot
+        if !isPowerOn || included.isEmpty {
+            // Off or no mix → show an empty wheel immediately
+            selectedColorsWeighted = []
+            wheelOpacity = isPowerOn ? 1.0 : 0.0
+            // also cancel any pending tasks so nothing repaints over this
+            rebuildTask?.cancel()
+            clearTask?.cancel()
+        } else {
+            // On + has mix → compute stops
+            wheelOpacity = 1.0
+            scheduleWheelRebuild()
+        }
+    }
+}

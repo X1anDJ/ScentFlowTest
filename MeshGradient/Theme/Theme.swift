@@ -58,7 +58,7 @@ public extension View {
 extension Theme {
     enum Shadow {
         static let wheelLight = Color.black.opacity(0.2)
-        static let wheelDark  = Color.white.opacity(0.1)
+        static let wheelDark  = Color.white.opacity(0.15)
     }
 //    
 //    enum CircleFill {
@@ -75,7 +75,7 @@ extension Theme {
     enum CircleFill {
         static let innerLight = Color.gray.opacity(0.1)
         static let outerLight = Color.gray.opacity(0)
-        static let innerDark  = Color.gray.opacity(0.40)
+        static let innerDark  = Color.gray.opacity(0.20)
         static let outerDark  = Color.gray.opacity(0.02)
 
         static func gradient(for scheme: ColorScheme, radius: CGFloat) -> RadialGradient {
