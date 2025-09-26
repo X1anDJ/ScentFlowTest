@@ -5,7 +5,6 @@
 //  Created by Dajun Xian on 9/11/25.
 //
 
-
 import SwiftUI
 
 struct ExplorePage: View {
@@ -19,24 +18,34 @@ struct ExplorePage: View {
                     CardWithShadowContainer(
                         title: "Customize Pod",
                         height: 120,
-                        background: { Image("colorInk2").resizable().scaledToFit() },
+                        background: {
+                            Image("colorInk2")
+                                .resizable()
+                                .scaledToFill()
+                                .frame(height: 180)   // force consistent height
+                                .clipped()
+                        },
                         label: { Text("Unique scent make by you").font(.subheadline) }
                     )
-//                    .padding(.horizontal, 16) // <- add gutters here
                 }
                 .buttonStyle(.plain)
-
 
                 NavigationLink {
                     CustomizePodPage()
                 } label: {
                     CardWithShadowContainer(
-                        title: "Master Templates",
+                        title: "Official Templates",
                         height: 120,
-                        background: { Image("mesh").resizable().scaledToFit() },
+                        background: {
+                            Image("mesh")
+                                .resizable()
+                                .scaledToFill()
+                                .frame(height: 180)   // force consistent height
+                                .clipped()
+                                .opacity(0.7)
+                        },
                         label: { Text("Coming soon").font(.subheadline) }
                     )
-//                    .padding(.horizontal, 16) // <- add gutters here
                 }
                 .buttonStyle(.plain)
                 

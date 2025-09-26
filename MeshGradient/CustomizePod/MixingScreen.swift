@@ -3,15 +3,15 @@ import SwiftUI
 struct MixingScreen: View {
     // ===== Shader knobs (defaults) =====
     @State private var speed: Double      = 1.8
-    @State private var scale: Double      = 0.5   // start at 1.0; Renderer animates toward this
-    @State private var warp: Double       = 2.0
+    @State private var scale: Double      = 0.5
+    @State private var warp: Double       = 3.0
     @State private var edge: Double       = 0.7
     @State private var separation: Double = 0.5
     @State private var contrast: Double   = 0.8
 
     // Scents arrays (max 6) — start empty
     @State private var activeColors: Int = 0
-    @State private var colorPickers: [Color] = Array(repeating: .black, count: 6)
+    @State private var colorPickers: [Color] = Array(repeating: .white, count: 6)
     @State private var intensities:  [Double] = Array(repeating: 1.0,   count: 6)
     @State private var scentNames:   [String] = (1...6).map { "Scent \($0)" }
 
@@ -19,6 +19,7 @@ struct MixingScreen: View {
     @State private var colorPickerIndex: Int? = nil
 
     @State private var addedIndexPulse: Int32 = -1
+    
     
     // ===== Shader params =====
     private var shaderParams: ShaderParams {
@@ -106,37 +107,14 @@ struct MixingScreen: View {
                     }
                 )
             }
-            .padding(.horizontal, 4)
+            
 
             // ===== 3) Order Scent (native glass button) =====
             GlassOrderButton(title: "Order Scent", systemImage: "bag.fill") {
                 // TODO: start order flow
             }
         }
-        // Single sheet for color picking, triggered by the row’s circle button.
-        .sheet(isPresented: Binding(
-            get: { colorPickerIndex != nil },
-            set: { if !$0 { colorPickerIndex = nil } }
-        )) {
-            let i = colorPickerIndex ?? 0
-            NavigationStack {
-                Form {
-                    Section(header: Text(scentNames[i])) {
-                        ColorPicker("Color", selection: Binding(
-                            get: { colorPickers[i] },
-                            set: { colorPickers[i] = $0 }
-                        ))
-                    }
-                }
-                .navigationTitle("Pick Color")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Done") { colorPickerIndex = nil }
-                    }
-                }
-            }
-        }
+        .padding(.horizontal, 12)
     }
 }
 
@@ -199,87 +177,53 @@ private struct MixingPanelContent: View {
             .background(.thinMaterial, in: innerShape)
             //.overlay(innerShape.strokeBorder(Color.white.opacity(0.12), lineWidth: 0.8))
 
-            // ===== Current Scents (REUSES ColorRow) =====
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Scents")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-
-                VStack(spacing: 10) {
-                    ForEach(0..<activeColors, id: \.self) { i in
-                        ScentControllerSlider(
-                            name: scentNames[i],
-                            color: colorPickers[i],
-                            displayed: intensities[i],
-                            onChangeDisplayed: { intensities[i] = $0 },
-                            onFocusOrToggle: { onTapRowCircle(i) },
-                            onRemove: {
-                                removeScent(at: i)
-                                onRemovedScent()
-                            }
-                        )
-                    }
+            VStack(spacing: 10) {
+                ForEach(0..<activeColors, id: \.self) { i in
+                    ScentControllerSlider(
+                        name: scentNames[i],
+                        color: colorPickers[i],
+                        displayed: intensities[i],
+                        onChangeDisplayed: { intensities[i] = $0 },
+                        onFocusOrToggle: { onTapRowCircle(i) },
+                        onRemove: {
+                            removeScent(at: i)
+                            onRemovedScent()
+                        }
+                    )
                 }
             }
+            
+            Spacer()
+//            // ===== Current Scents (REUSES ColorRow) =====
+//            VStack(alignment: .leading, spacing: 10) {
+//                Text("Scents")
+//                    .font(.subheadline)
+//                    .foregroundStyle(.secondary)
+//
+//
+//            }
 
-            // Motion & Shape
-            GroupBox {
-                VStack(spacing: 8) {
-                    slider("Speed", value: $speed, range: 0...2)
-                    slider("Scale", value: $scale, range: 0.4...4)
-                    slider("Warp",  value: $warp,  range: 0...2)
-                }
-            } label: { label("Motion & Shape", systemImage: "waveform.path.ecg") }
-
-            // Blend
-            GroupBox {
-                VStack(spacing: 8) {
-                    slider("Edge Softness", value: $edge, range: 0...1)
-                    slider("Separation",   value: $separation, range: 0.5...6)
-                    slider("Contrast",     value: $contrast, range: 0.6...1.4)
-                }
-            } label: { label("Blend", systemImage: "wand.and.stars") }
+//            // Motion & Shape
+//            GroupBox {
+//                VStack(spacing: 8) {
+//                    slider("Speed", value: $speed, range: 0...2)
+//                    slider("Scale", value: $scale, range: 0.4...4)
+//                    slider("Warp",  value: $warp,  range: 0...2)
+//                }
+//            } label: { label("Motion & Shape", systemImage: "waveform.path.ecg") }
+//
+//            // Blend
+//            GroupBox {
+//                VStack(spacing: 8) {
+//                    slider("Edge Softness", value: $edge, range: 0...1)
+//                    slider("Separation",   value: $separation, range: 0.5...6)
+//                    slider("Contrast",     value: $contrast, range: 0.6...1.4)
+//                }
+//            } label: { label("Blend", systemImage: "wand.and.stars") }
         }
     }
 
-    // MARK: - Categories
-    private enum Category: CaseIterable {
-        case red, orange, brown, yellow, green, cyan, violet
-        var color: Color {
-            switch self {
-            case .red:    return .red
-            case .orange: return .orange
-            case .brown:  return .brown
-            case .yellow: return .yellow
-            case .green:  return .green
-            case .cyan:   return .cyan
-            case .violet: return .purple
-            }
-        }
-        var label: String {
-            switch self {
-            case .red: return "Warm"
-            case .orange: return "Fruit"
-            case .brown: return "Woody"
-            case .yellow: return "Flower"
-            case .green:  return "Grass"
-            case .cyan:   return "Ozonic"
-            case .violet: return "Mystery"
-            }
-        }
-        var displayName: String { label }
-        var optionsEN: [String] {
-            switch self {
-            case .red:    return ["Pepper","Cinnamon","Clove"]
-            case .orange: return ["Orange","Lemon","Grapefruit"]
-            case .brown:  return ["Sandalwood","Cedar","Pine"]
-            case .yellow: return ["Jasmine","Rose","Osmanthus"]
-            case .green:  return ["Mint","Green Leaves","Fresh Grass"]
-            case .cyan:   return ["Sea Breeze","Water Vapor","Petrichor"]
-            case .violet: return ["Vanilla","Resin","Frankincense"]
-            }
-        }
-    }
+
 
     private func categoriesGrid() -> some View {
         let cols = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
@@ -398,7 +342,8 @@ private struct GlassOrderButton: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
         }
-        .buttonStyle(.glassProminent)
+        .buttonStyle(.glass)
+        .controlSize(.extraLarge)
     }
 }
 
