@@ -1,3 +1,11 @@
+//
+//  PowerButtonRow.swift
+//  MeshGradient
+//
+//  Created by Dajun Xian on 9/25/25.
+//
+
+
 import SwiftUI
 
 /// Parent hierarchy control: shows a power button; when on, a fan slider appears.
@@ -37,14 +45,13 @@ struct PowerButtonRow: View {
                         in: 0...1
                     )
                     .accessibilityLabel("Fan speed")
-                    .sliderTintGray()   // your grayer-than-global tint
+                    .sliderTintGray()
 
                     Text("\(Int(speed * 100))%")
                         .font(.footnote.monospacedDigit())
                         .frame(width: 44, alignment: .trailing)
                         .foregroundStyle(.secondary)
                 }
-                // ⬇️ Horizontal appear/disappear + fade
                 .transition(
                     .move(edge: .trailing).combined(with: .opacity)
                 )

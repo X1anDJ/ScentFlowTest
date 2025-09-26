@@ -18,6 +18,8 @@ struct MixingScreen: View {
     // For color picking via the row's circle button
     @State private var colorPickerIndex: Int? = nil
 
+    @State private var addedIndexPulse: Int32 = -1
+    
     // ===== Shader params =====
     private var shaderParams: ShaderParams {
         var p = ShaderParams()
@@ -53,7 +55,7 @@ struct MixingScreen: View {
     var body: some View {
         let ballSize: CGFloat = 216
 
-        VStack(spacing: 24) {
+        VStack(spacing: 0) {
             // ===== 1) Ball — MetalView clipped to circle + glass discs =====
             ZStack {
                 MetalView(params: shaderParams)
@@ -330,8 +332,8 @@ private struct MixingPanelContent: View {
 
         // Single, synced transaction: fade-in + collapse
         withAnimation(.easeInOut(duration: 0.35)) {
-            onAddedScent(idx)          // sets intensity -> 1.0 and bumps scale (no inner animation)
-            isScentsOpen = false       // collapse together so it doesn't beat the fade
+            onAddedScent(idx)
+            isScentsOpen = false
             selectedCategory = nil
         }
     }

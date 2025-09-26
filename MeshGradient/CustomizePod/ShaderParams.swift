@@ -30,6 +30,8 @@ struct ShaderParams: Equatable {
     var intensity4: Float = 1
     var intensity5: Float = 1
     var intensity6: Float = 1
+    // Index of newly added scent (0...5); -1 means none; used only by Renderer for fade-in
+    var addedIndex: Int32 = -1
 }
 
 // MARK: - GPU struct exactly matching MSL layout

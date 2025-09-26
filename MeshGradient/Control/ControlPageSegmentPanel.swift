@@ -42,9 +42,7 @@ struct ControlPageSegmentPanel: View {
                             onTapHue: { vm.toggle($0) },
                             onChangeOpacity: { name, eff in vm.setOpacity(eff, for: name) },
                             onExpansionChange: { expanded in
-                                withAnimation(.spring(response: 0.65, dampingFraction: 0.9)) {
-                                    controlsExpanded = expanded
-                                }
+                                controlsExpanded = expanded
                             }
                         )
 
@@ -71,6 +69,6 @@ struct ControlPageSegmentPanel: View {
 
         // Default: fixed height. Expanded: hug intrinsic height.
         .frame(height: shouldAutoSize ? nil : collapsedHeight, alignment: .bottom)
-        .animation(.spring(response: 0.65, dampingFraction: 0.8), value: shouldAutoSize)
+        .animation(.bouncy, value: shouldAutoSize)
     }
 }
