@@ -104,7 +104,7 @@ final class Renderer: NSObject, MTKViewDelegate {
     private var targetScale:  Float = 1.0
     private var scaleFrom:    Float = 1.0
     private var scaleAnimStart: CFTimeInterval = CACurrentMediaTime()
-    private let scaleAnimDuration: CFTimeInterval = 3.0
+    private let scaleAnimDuration: CFTimeInterval = 2.0
     private var scaleAnimating: Bool = false
 
     // MARK: - Intensity (add) fade tween

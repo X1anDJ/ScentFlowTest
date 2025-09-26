@@ -31,18 +31,23 @@ struct ScentControllerSlider: View {
     /// 0...1 displayed percent
     let displayed: Double
     let onChangeDisplayed: (Double) -> Void
-    let onFocusOrToggle: () -> Void
+    var onFocusOrToggle: (() -> Void)? = nil
     var onRemove: (() -> Void)? = nil
 
     var body: some View {
         HStack(spacing: 8) {
-            Button(action: onFocusOrToggle) {
+            if let onFocusOrToggle {    // only show button if closure provided
+                Button(action: onFocusOrToggle) {
+                    Circle()
+                        .fill(color)
+                        .frame(width: 8, height: 8)
+                }
+                .buttonStyle(.plain)
+            } else {
                 Circle()
                     .fill(color)
                     .frame(width: 8, height: 8)
-                    //.overlay(Circle().stroke(.white.opacity(0.3), lineWidth: 1))
             }
-            .buttonStyle(.plain)
             
             
 
