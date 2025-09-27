@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct ScentControllerStepper: View {
-    let focused: Scent?
+    let focused: ScentPod?
     @Binding var value: Double
     
     var body: some View {

@@ -1,41 +1,50 @@
-//
-//  MeshRenderer.swift
-//  MeshGradient
-//
-//  Created by Dajun Xian on 9/11/25.
-//
-
 import SwiftUI
 
 struct RendererConfig {
     var ensureMinStops: Bool = true
 }
 
+/// A renderer that produces a palette given the current wheel inputs.
+/// (We no longer depend on Mix/Scent.)
 protocol MeshRenderer {
-    func palette(for mix: Mix, catalog: [UUID: Scent], order: [UUID]) -> [Color]
+    func palette(
+        orderedPodIDs: [UUID],
+        colorsByPodID: [UUID: Color],
+        included: Set<UUID>,
+        opacities: [UUID: Double],
+        maxIntensity: Double
+    ) -> [Color]
 }
 
 struct DefaultMeshRenderer: MeshRenderer {
     var config: RendererConfig = .init()
 
-    func palette(for mix: Mix, catalog: [UUID: Scent], order: [UUID]) -> [Color] {
-        let maxI = max(0.0001, AppConfig.maxIntensity)
+    func palette(
+        orderedPodIDs: [UUID],
+        colorsByPodID: [UUID: Color],
+        included: Set<UUID>,
+        opacities: [UUID: Double],
+        maxIntensity: Double
+    ) -> [Color] {
+        let maxI = max(0.0001, maxIntensity)
 
-        let entries: [(Color, Double)] = order
-            .filter { mix.selected.contains($0) }
+        let entries: [(Color, Double)] = orderedPodIDs
+            .filter { included.contains($0) }
             .compactMap { id in
-                guard let scent = catalog[id] else { return nil }
-                let raw = mix.intensity[id] ?? scent.defaultIntensity
-                let a = min(AppConfig.maxIntensity, max(0, raw))
-                return a > 0.01 ? (scent.color, a) : nil
+                guard let base = colorsByPodID[id] else { return nil }
+                let raw = opacities[id] ?? 0
+                let a = min(maxIntensity, max(0, raw))
+                return a > 0.01 ? (base, a) : nil
             }
 
         func withAlpha(_ c: Color, _ a: Double) -> Color {
+            #if canImport(UIKit)
             let ui = UIColor(c)
             var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, oldA: CGFloat = 0
             if ui.getRed(&r, green: &g, blue:&b, alpha:&oldA) {
                 return Color(.sRGB, red: Double(r), green: Double(g), blue: Double(b), opacity: a / maxI)
             }
+            #endif
             return c.opacity(a / maxI)
         }
 

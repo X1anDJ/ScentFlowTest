@@ -1,24 +1,28 @@
+// TemplatePreviewCard.swift — optional: log + gentle fallback message if empty
+
 import SwiftUI
 
-/// Small visual card that previews a saved template using your wheel renderer.
-/// Now uses a **static mesh** (no animation) so gallery items don't animate.
 struct TemplatePreviewCard: View {
-    let template: ColorTemplate
-    let names: [String]
-    let colorDict: [String: Color]
+    let template: ScentsTemplate
+    let device: Device
 
     var body: some View {
-        let palette = buildPalette(
-            canonicalOrder: names,
-            colorDict: colorDict,
-            included: template.included,
-            opacities: template.opacities
-        )
+        let palette = paletteForPreview(template: template, device: device)
 
         return VStack(spacing: 8) {
-            // ⬇️ Static preview (animate: false)
-            GradientContainerCircle(colors: palette, animate: false, isTemplate: true)
-                .frame(width: 80, height: 80)
+            if palette.isEmpty {
+                ZStack {
+                    GradientContainerCircle(colors: [], animate: false, isTemplate: true)
+                        .frame(width: 80, height: 80)
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .opacity(0.6)
+                }
+                .help("No matching pods currently inserted.")
+            } else {
+                GradientContainerCircle(colors: palette, animate: false, isTemplate: true)
+                    .frame(width: 80, height: 80)
+            }
 
             Text(template.name)
                 .font(.footnote)
@@ -33,5 +37,22 @@ struct TemplatePreviewCard: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .strokeBorder(.white.opacity(0.10), lineWidth: 1)
         )
+    }
+
+    /// Build a simple static palette for preview purposes.
+    private func paletteForPreview(template: ScentsTemplate, device: Device) -> [Color] {
+        let byID = Dictionary(uniqueKeysWithValues: device.insertedPods.map { ($0.id, $0) })
+        let podsInDevice = template.scentPodIDs.compactMap { byID[$0] }
+
+        let base = podsInDevice.map { $0.color.color.opacity(0.6) }
+        // debug
+        // print("Template \(template.name) → matched \(base.count) pods")
+
+        switch base.count {
+        case 0: return []
+        case 1: return [base[0], base[0].opacity(0.5), base[0]]
+        case 2: return [base[0], base[1], base[0].opacity(0.5)]
+        default: return base
+        }
     }
 }

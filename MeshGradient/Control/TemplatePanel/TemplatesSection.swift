@@ -1,21 +1,12 @@
-//
-//  TemplatesSection.swift
-//  MeshGradient
-//
-//  Created by Dajun Xian on 9/24/25.
-//
-
+// TemplatesSection.swift — refactored to ScentsTemplate + VM + Device
 
 import SwiftUI
-// TemplatesSection.swift (signature)
-struct TemplatesSection: View {
-    let names: [String]
-    let colorDict: [String: Color]
-    let included: Set<String>
-    let opacities: [String: Double]
-    let onApplyTemplate: (_ included: Set<String>, _ opacities: [String: Double]) -> Void
 
-    @ObservedObject var store: TemplatesStore  // <-- add this
+struct TemplatesSection: View {
+    // Use the new model + stores
+    @ObservedObject var store: TemplatesStore
+    @ObservedObject var vm: GradientWheelViewModel
+    let device: Device
 
     @State private var showingNameAlert = false
     @State private var newTemplateName: String = ""
@@ -27,32 +18,34 @@ struct TemplatesSection: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 14) {
                         SaveTemplateCard(
-                            title: "Save",
-                           // subtitle: "Capture current mix"
+                            title: "Save"
                         ) {
-                            // Same behavior as your Save button
                             newTemplateName = "Mix \(store.templates.count + 1)"
                             showingNameAlert = true
                         }
                     }
-//                    .padding(.vertical, 2)
-//                    .padding(.top, 2)
                 }
             } else {
                 TemplatesGallery(
-                    names: names,
-                    colorDict: colorDict,
+                    device: device,
                     templates: store.templates,
-                    onTapTemplate: { t in onApplyTemplate(t.included, t.opacities) },
-                    onDeleteTemplate: { t in store.remove(t) }
+                    onTapTemplate: { t in
+                        // Apply to wheel (intersects with device pods and rebuilds)
+                        vm.applyTemplate(t, on: device)
+                        // Optionally: also persist as active if you track it in settings/store
+                        store.activeTemplateID = t.id
+                        store.persist()
+                    },
+                    onDeleteTemplate: { t in
+                        store.remove(id: t.id)
+                    }
                 )
             }
-            
+
             Spacer()
-            
+
             HStack {
                 Spacer()
-                
                 Button {
                     newTemplateName = "Mix \(store.templates.count + 1)"
                     showingNameAlert = true
@@ -61,11 +54,9 @@ struct TemplatesSection: View {
                 }
                 .buttonStyle(.glass)
                 .controlSize(.large)
-                
                 Spacer()
             }
             .padding(.bottom, 16)
-            
         }
         .alert("Save Template", isPresented: $showingNameAlert) {
             TextField("Template name", text: $newTemplateName)
@@ -76,21 +67,25 @@ struct TemplatesSection: View {
                 let name = newTemplateName.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !name.isEmpty else { return }
                 saveCurrentTemplate(named: name)
-                newTemplateName = "" // optional: clear after saving
+                newTemplateName = ""
             }
 
             Button("Cancel", role: .cancel) {
-                newTemplateName = "" // optional: clear on cancel
+                newTemplateName = ""
             }
         } message: {
             Text("Enter a name for this scent mix.")
         }
-
     }
 
     private func saveCurrentTemplate(named name: String) {
-        guard !name.isEmpty else { return }
-        let new = ColorTemplate(name: name, included: included, opacities: opacities)
+        // Preserve a stable, user-visible order: the device’s pod order filtered by inclusion
+        let orderedIncluded = vm.pods.map(\.id).filter { vm.included.contains($0) }.prefix(6)
+        guard !orderedIncluded.isEmpty else { return }
+
+        let new = ScentsTemplate(name: name, scentPodIDs: Array(orderedIncluded))
         store.add(new)
+        store.activeTemplateID = new.id
+        store.persist()
     }
 }

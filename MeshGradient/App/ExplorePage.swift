@@ -13,7 +13,10 @@ struct ExplorePage: View {
             VStack(spacing: 16) {
 
                 NavigationLink {
-                    CustomizePodPage()
+                    MixingScreen()
+                        .navigationTitle("Customize Pod")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar(.hidden, for: .tabBar)
                 } label: {
                     CardWithShadowContainer(
                         title: "Customize Pod",
@@ -31,7 +34,7 @@ struct ExplorePage: View {
                 .buttonStyle(.plain)
 
                 NavigationLink {
-                    CustomizePodPage()
+                    //CustomizePodPage()   // Temperoy holder, implement later.
                 } label: {
                     CardWithShadowContainer(
                         title: "Official Templates",

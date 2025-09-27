@@ -1,21 +1,16 @@
 import Foundation
 
-protocol TemplatesRepository {
-    func load() throws -> [ColorTemplate]
-    func save(_ templates: [ColorTemplate]) throws
-}
+@MainActor
+final class TemplatesRepository {
+    private let key = "templates"
 
-/// Simple persistence using UserDefaults and JSON (string-based ColorTemplate).
-struct UserDefaultsTemplatesRepository: TemplatesRepository {
-    private let key = "templates.v1.strings"
-
-    func load() throws -> [ColorTemplate] {
-        guard let data = UserDefaults.standard.data(forKey: key) else { return [] }
-        return try JSONDecoder().decode([ColorTemplate].self, from: data)
-    }
-
-    func save(_ templates: [ColorTemplate]) throws {
+    func save(_ templates: [ScentsTemplate]) throws {
         let data = try JSONEncoder().encode(templates)
         UserDefaults.standard.set(data, forKey: key)
+    }
+
+    func load() throws -> [ScentsTemplate] {
+        guard let data = UserDefaults.standard.data(forKey: key) else { return [] }
+        return try JSONDecoder().decode([ScentsTemplate].self, from: data)
     }
 }

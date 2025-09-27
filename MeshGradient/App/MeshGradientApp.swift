@@ -6,6 +6,7 @@ struct MeshGradientApp: App {
         WindowGroup {
             ContentView()
                 .applyGrayscaleTint()
+                .environment(\.colorScheme, .dark)
         }
     }
 }

@@ -1,5 +1,5 @@
 //
-//  Params.swift
+//  GPUParams.swift
 //  MeshGradient
 //
 //  Created by Dajun Xian on 9/25/25.

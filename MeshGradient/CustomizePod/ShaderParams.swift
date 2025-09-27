@@ -6,7 +6,7 @@ import simd
 struct ShaderParams: Equatable {
     // Knobs (targets)
     var speed: Float      = 1.8
-    var scale: Float      = 0.2   // target scale; renderer eases toward this
+    var scale: Float      = 0.2   
     var warp:  Float      = 2.0
     var edge:  Float      = 0.5
     var separation: Float = 6.0

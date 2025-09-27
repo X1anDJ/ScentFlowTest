@@ -1,22 +1,21 @@
+// ControlPageSegmentPanel.swift — matches ControlsSection & TemplatesSection
+
 import SwiftUI
 
 struct ControlPageSegmentPanel: View {
     @ObservedObject var vm: GradientWheelViewModel
     @ObservedObject var templatesStore: TemplatesStore
+    @ObservedObject var devicesStore: DevicesStore
 
     @Binding var segment: ControlPage.Segment
     @Binding var controlsExpanded: Bool
 
     let collapsedHeight: CGFloat
 
-    private var shouldAutoSize: Bool {
-        segment == .controls && controlsExpanded
-    }
+    private var shouldAutoSize: Bool { segment == .controls && controlsExpanded }
 
     var body: some View {
         ZStack {
-            // If you ever want a custom background later, add it here.
-
             VStack {
                 Picker("", selection: $segment) {
                     Text("Controls").tag(ControlPage.Segment.controls)
@@ -28,34 +27,13 @@ struct ControlPageSegmentPanel: View {
                 Group {
                     switch segment {
                     case .controls:
-                        ControlsSection(
-                            isPowerOn: vm.isPowerOn,
-                            fanSpeed: vm.fanSpeed,
-                            onTogglePower: { vm.togglePower() },
-                            onChangeFanSpeed: { vm.setFanSpeed($0) },
-                            names: vm.canonicalOrder,
-                            colorDict: vm.colorDict,
-                            included: vm.included,
-                            focusedName: vm.focusedName,
-                            canSelectMore: vm.canSelectMore,
-                            opacities: vm.opacities,
-                            onTapHue: { vm.toggle($0) },
-                            onChangeOpacity: { name, eff in vm.setOpacity(eff, for: name) },
-                            onExpansionChange: { expanded in
-                                controlsExpanded = expanded
-                            }
-                        )
+                        ControlsSection(vm: vm, onExpansionChange: { controlsExpanded = $0 })
 
                     case .templates:
                         TemplatesSection(
-                            names: vm.canonicalOrder,
-                            colorDict: vm.colorDict,
-                            included: vm.included,
-                            opacities: vm.opacities,
-                            onApplyTemplate: { inc, ops in
-                                vm.applyTemplate(included: inc, opacities: ops)
-                            },
-                            store: templatesStore
+                            store: templatesStore,
+                            vm: vm,
+                            device: devicesStore.device
                         )
                     }
                 }
@@ -64,10 +42,7 @@ struct ControlPageSegmentPanel: View {
             .padding(.horizontal, 16)
             .frame(maxHeight: .infinity, alignment: .top)
         }
-        // Moved from PanelContainer:
         .adaptiveGlassBackground(RoundedRectangle(cornerRadius: 16, style: .continuous))
-
-        // Default: fixed height. Expanded: hug intrinsic height.
         .frame(height: shouldAutoSize ? nil : collapsedHeight, alignment: .bottom)
         .animation(.bouncy, value: shouldAutoSize)
     }

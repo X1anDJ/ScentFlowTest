@@ -1,17 +1,11 @@
-//
-//  DevicePickerSheet.swift
-//  MeshGradient
-//
-//  Created by Dajun Xian on 9/11/25.
-//
-
+// DevicePickerSheet.swift  — refactored to use Device (no DeviceProfile)
 
 import SwiftUI
 
 /// Simple picker to switch between devices (current + mock).
 struct DevicePickerSheet: View {
     @ObservedObject var store: DevicesStore
-    let onSelected: (DeviceProfile) -> Void
+    let onSelected: (Device) -> Void   // <- changed from DeviceProfile
 
     @Environment(\.dismiss) private var dismiss
 

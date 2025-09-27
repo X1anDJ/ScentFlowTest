@@ -1,3 +1,5 @@
+// ControlPage.swift — per-device settings + VM hookup
+
 import SwiftUI
 
 struct ControlPage: View {
@@ -15,40 +17,42 @@ struct ControlPage: View {
 
     // MARK: - View Model & Stores
     @StateObject private var vm = GradientWheelViewModel()
-    @StateObject private var devices = DevicesStore()
-    @StateObject private var templatesStore = TemplatesStore()
+
+    // Injected stores
+    @ObservedObject var devices: DevicesStore
+    @ObservedObject var templatesStore: TemplatesStore
 
     // MARK: - UI State
     @State private var showScanner = false
     @State private var controlsExpanded = false
 
-    // Segmented control
-    enum Segment: Int, Hashable {
-        case controls = 0, templates = 1
-    }
+    enum Segment: Int, Hashable { case controls = 0, templates = 1 }
     @State private var segment: Segment = .controls
 
-    // MARK: - Computed
-    private var wheelScale: CGFloat {
-        controlsExpanded ? UI.expandedScale : UI.collapsedScale
-    }
+    private var wheelScale: CGFloat { controlsExpanded ? UI.expandedScale : UI.collapsedScale }
 
-    // MARK: - Persistence
+    // Persist per-device (not global)
     private func saveSnapshot() {
-        devices.updateCurrentSettings(vm.snapshot())
+        devices.updateCurrentSettings(vm.exportSettings())
     }
 
-    // MARK: - Body
     var body: some View {
         ZStack {
-            // TOP COLUMN
+            // TOP
             VStack(spacing: 12) {
                 DeviceMenuBar(
                     devices: devices,
                     showScanner: $showScanner,
                     onSelect: { device in
                         devices.select(device.id)
-                        vm.load(from: device.settings)
+                        vm.updateDevicePods(device.insertedPods)
+                        if let saved = device.savedSettings {
+                            vm.load(from: saved)
+                        } else {
+                            // default: power on, clear wheel
+                            vm.setPower(true)
+                            // optional: vm.applyTemplate(nil, on: device)
+                        }
                     }
                 )
                 .padding(.top, 4)
@@ -61,7 +65,7 @@ struct ControlPage: View {
                     isOn: vm.isPowerOn,
                     onToggle: { vm.togglePower() }
                 )
-                .aspectRatio(1, contentMode: .fit)   // keeps it square
+                .aspectRatio(1, contentMode: .fit)
                 .padding(.horizontal, UI.wheelPadding)
                 .scaleEffect(wheelScale, anchor: .center)
                 .animation(.spring(response: 0.45, dampingFraction: 0.85), value: wheelScale)
@@ -78,6 +82,7 @@ struct ControlPage: View {
                 ControlPageSegmentPanel(
                     vm: vm,
                     templatesStore: templatesStore,
+                    devicesStore: devices,
                     segment: $segment,
                     controlsExpanded: $controlsExpanded,
                     collapsedHeight: UI.collapsedCardHeight
@@ -91,17 +96,31 @@ struct ControlPage: View {
         .navigationTitle("ScentsFlow")
         .sheet(isPresented: $showScanner) { ScannerSheet() }
 
-        // MARK: - State Change Persistence
+        // Persist per-device on changes
         .onChange(of: vm.isPowerOn)    { _, _ in saveSnapshot() }
         .onChange(of: vm.fanSpeed)     { _, _ in saveSnapshot() }
         .onChange(of: vm.included)     { _, _ in saveSnapshot() }
         .onChange(of: vm.opacities)    { _, _ in saveSnapshot() }
-        .onChange(of: vm.focusedName)  { _, _ in saveSnapshot() }
+        .onChange(of: vm.focusedPodID) { _, _ in saveSnapshot() }
 
-        // MARK: - Initial Load
+        // Initial load
         .onAppear {
             if let current = devices.selected {
-                vm.load(from: current.settings)
+                // 1) pods drive colors/order
+                vm.updateDevicePods(current.insertedPods)
+                // 2) load saved settings for this device if any
+                if let saved = current.savedSettings {
+                    vm.load(from: saved)
+                } else {
+                    vm.setPower(true)
+                }
+            } else {
+                // If no device yet, seed a mock and initialize
+                devices.seedMockIfNeeded()
+                if let current = devices.selected {
+                    vm.updateDevicePods(current.insertedPods)
+                    vm.setPower(true)
+                }
             }
         }
     }

@@ -1,50 +1,22 @@
+// TemplatesGallery.swift — refactored to ScentsTemplate + Device + new card
+
 import SwiftUI
 
 struct TemplatesGallery: View {
-    let names: [String]
-    let colorDict: [String: Color]
-    let templates: [ColorTemplate]
-    let onTapTemplate: (ColorTemplate) -> Void
-    let onDeleteTemplate: (ColorTemplate) -> Void
+    let device: Device
+    let templates: [ScentsTemplate]
+    let onTapTemplate: (ScentsTemplate) -> Void
+    let onDeleteTemplate: (ScentsTemplate) -> Void
 
-    @State private var toDelete: ColorTemplate?
+    @State private var toDelete: ScentsTemplate?
 
     var body: some View {
-//        VStack(alignment: .leading, spacing: 0) {
-//            ScrollView(.horizontal, showsIndicators: false) {
-//                HStack(spacing: 14) {
-//                    ForEach(templates) { t in
-//                        // Tap to apply; long-press to delete
-//                        Button { onTapTemplate(t) } label: {
-//                            TemplatePreviewCard(
-//                                template: t,
-//                                names: names,
-//                                colorDict: colorDict
-//                            )
-//                        }
-//                        .buttonStyle(.plain)
-//                        .simultaneousGesture(
-//                            LongPressGesture(minimumDuration: 0.5)
-//                                .onEnded { _ in toDelete = t }
-//                        )
-//                    }
-//                }
-//                .padding(.vertical, 4)
-//            }
-//            
-//            Spacer()
-//        }
-        
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 14) {
                 ForEach(templates) { t in
                     // Tap to apply; long-press to delete
                     Button { onTapTemplate(t) } label: {
-                        TemplatePreviewCard(
-                            template: t,
-                            names: names,
-                            colorDict: colorDict
-                        )
+                        TemplatePreviewCard(template: t, device: device)
                     }
                     .buttonStyle(.plain)
                     .simultaneousGesture(
@@ -53,7 +25,6 @@ struct TemplatesGallery: View {
                     )
                 }
             }
-//            .padding(.vertical, 4)
         }
         .confirmationDialog(
             "Delete this template?",

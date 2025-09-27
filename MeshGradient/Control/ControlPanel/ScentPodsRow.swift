@@ -1,20 +1,13 @@
-//
-//  ScentPodsRow.swift
-//  MeshGradient
-//
-//  Created by Dajun Xian on 9/25/25.
-//
-
+// ScentPodsRow.swift  (ID-based, no colorDict or name arrays)
 
 import SwiftUI
 
 struct ScentPodsRow: View {
-    let names: [String]
-    let colorDict: [String: Color]
-    let included: Set<String>
-    let focusedName: String?
+    let pods: [ScentPod]
+    let includedIDs: Set<UUID>
+    let focusedID: UUID?
     let canSelectMore: Bool
-    let onTap: (String) -> Void
+    let onTap: (UUID) -> Void
 
     // Visual constants
     private let diameter: CGFloat = 28
@@ -23,15 +16,15 @@ struct ScentPodsRow: View {
 
     var body: some View {
         GeometryReader { geo in
-            let count = names.count
+            let count = pods.count
             let totalChipWidth = CGFloat(count) * diameter
             let spacing = count > 1
-                ? (geo.size.width - totalChipWidth) / CGFloat(count - 1)
+                ? (geo.size.width - totalChipWidth) / CGFloat(max(1, count - 1))
                 : 0
 
             HStack(spacing: spacing) {
-                ForEach(names, id: \.self) { name in
-                    chip(for: name)
+                ForEach(pods, id: \.id) { pod in
+                    chip(for: pod)
                         .frame(width: diameter, height: diameter)
                 }
             }
@@ -43,12 +36,12 @@ struct ScentPodsRow: View {
     }
 
     @ViewBuilder
-    private func chip(for name: String) -> some View {
-        let color = colorDict[name] ?? .gray
-        let isAdded = included.contains(name)
-        let isFocused = focusedName == name
+    private func chip(for pod: ScentPod) -> some View {
+        let color = pod.color.color
+        let isAdded = includedIDs.contains(pod.id)
+        let isFocused = (focusedID == pod.id)
 
-        Button { onTap(name) } label: {
+        Button { onTap(pod.id) } label: {
             ZStack {
                 if isAdded {
                     Circle()
@@ -88,7 +81,7 @@ struct ScentPodsRow: View {
             .opacity(isAdded || canSelectMore ? 1 : 0.85)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(Text("\(name) \(isAdded ? "added" : "not added")"))
+        .accessibilityLabel(Text("\(pod.name) \(isAdded ? "added" : "not added")"))
         .accessibilityHint(Text(isAdded ? "Tap to focus, tap again to remove" : "Tap to add"))
     }
 }

@@ -1,47 +1,49 @@
+// AppStore.swift — slim coordinator (no power/fan in CurrentSettings)
+
 import SwiftUI
 import Combine
 
-/// Optional facade that coordinates your VM and templates persistence.
-/// If you're not using AppStore, you can remove this file from the build target.
-/// If you keep it, it now matches your string-based model.
 @MainActor
 final class AppStore: ObservableObject {
-    @Published var vm = GradientWheelViewModel()
+    let devices: DevicesStore
+    let templates: TemplatesStore
+    let current: CurrentSettingsStore     // now used for app-wide prefs (activeTemplateID)
+    @Published var vm: GradientWheelViewModel
+    private var bag = Set<AnyCancellable>()
 
-    private let templatesRepo: TemplatesRepository
-    @Published private(set) var templates: [ColorTemplate] = []
+    init(devices: DevicesStore, templates: TemplatesStore, current: CurrentSettingsStore, vm: GradientWheelViewModel) {
+        self.devices = devices
+        self.templates = templates
+        self.current = current
+        self.vm = vm
 
-    init(templatesRepo: TemplatesRepository = UserDefaultsTemplatesRepository()) {
-        self.templatesRepo = templatesRepo
-        self.templates = (try? templatesRepo.load()) ?? []
+        templates.load()
+        current.load()
+        templates.activeTemplateID = current.settings.activeTemplateID
+
+        // React to active template changes only; power is per-device now
+        templates.$activeTemplateID
+            .removeDuplicates()
+            .sink { [weak self] _ in self?.applyActiveTemplateToWheel() }
+            .store(in: &bag)
     }
 
-    // Render palette surfaced for convenience (same as ContentView currently does).
-    var renderPalette: [Color] {
-        vm.isPowerOn ? vm.selectedColorsWeighted : []
+    func setActiveTemplate(_ id: UUID?) {
+        templates.activeTemplateID = id
+        current.settings.activeTemplateID = id
+        current.persist()
+        templates.persist()
+        applyActiveTemplateToWheel()
     }
 
-    // MARK: - Templates
-    func saveCurrentTemplate() {
-        let t = ColorTemplate(
-            name: "Mix \(templates.count + 1)",
-            included: vm.included,
-            opacities: vm.opacities
-        )
-        templates.insert(t, at: 0)
-        persist()
-    }
+    private func applyActiveTemplateToWheel() {
+        // Device pods (source of colors/order)
+        vm.updateDevicePods(devices.device.insertedPods)
 
-    func apply(template: ColorTemplate) {
-        vm.applyTemplate(included: template.included, opacities: template.opacities)
-    }
+        // Apply active template (intersects with inserted pods, preserves order, sets defaults)
+        vm.applyTemplate(templates.activeTemplate, on: devices.device)
 
-    func delete(template: ColorTemplate) {
-        templates.removeAll { $0.id == template.id }
-        persist()
-    }
-
-    private func persist() {
-        try? templatesRepo.save(templates)
+        // Persist new wheel snapshot to the selected device
+        devices.updateCurrentSettings(vm.exportSettings())
     }
 }

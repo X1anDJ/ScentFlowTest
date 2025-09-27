@@ -1,58 +1,29 @@
-//
-//  Scent.swift
-//  MeshGradient
-//
-//  Created by Dajun Xian on 9/11/25.
-//
-
-
 import SwiftUI
 
-/// A single scent definition in the catalog.
-struct Scent: Identifiable, Hashable, Codable {
-    let id: UUID
-    var name: String
-    // NOTE: We do not encode `Color`; only the model. Color comes from theme/coding elsewhere if needed.
-    var colorHex: String
-    var defaultIntensity: Double
-
-    init(id: UUID = UUID(), name: String, color: Color, defaultIntensity: Double) {
-        self.id = id
-        self.name = name
-        self.colorHex = color.toHexSRGB() ?? "#FFFFFF"
-        self.defaultIntensity = defaultIntensity
-    }
-
-    // Runtime Color
-    var color: Color { Color.fromHex(colorHex) ?? .gray }
-}
-
-/// Helpers to convert Color <-> hex in sRGB (best-effort).
-extension Color {
-    func toHexSRGB() -> String? {
+public struct RGBAColor: Codable, Hashable {
+    public var r, g, b, a: Double
+    public init(_ c: Color) {
         #if canImport(UIKit)
-        let ui = UIColor(self)
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        guard ui.getRed(&r, green: &g, blue: &b, alpha: &a) else { return nil }
-        return String(format: "#%02X%02X%02X", Int(r*255), Int(g*255), Int(b*255))
-        #elseif canImport(AppKit)
-        let ns = NSColor(self)
-        guard let s = ns.usingColorSpace(.sRGB) else { return nil }
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        s.getRed(&r, green: &g, blue: &b, alpha: &a)
-        return String(format: "#%02X%02X%02X", Int(r*255), Int(g*255), Int(b*255))
+        var rr: CGFloat = 0, gg: CGFloat = 0, bb: CGFloat = 0, aa: CGFloat = 1
+        UIColor(c).getRed(&rr, green: &gg, blue: &bb, alpha: &aa)
+        self.r = .init(rr); self.g = .init(gg); self.b = .init(bb); self.a = .init(aa)
         #else
-        return nil
+        self.r = 1; self.g = 1; self.b = 1; self.a = 1
         #endif
     }
+    public var color: Color { Color(.sRGB, red: r, green: g, blue: b, opacity: a) }
+}
 
-    static func fromHex(_ hex: String) -> Color? {
-        var h = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-        if h.hasPrefix("#") { h.removeFirst() }
-        guard h.count == 6, let v = Int(h, radix: 16) else { return nil }
-        let r = Double((v >> 16) & 0xFF)/255.0
-        let g = Double((v >> 8) & 0xFF)/255.0
-        let b = Double(v & 0xFF)/255.0
-        return Color(.sRGB, red: r, green: g, blue: b, opacity: 1)
+public struct ScentPod: Identifiable, Codable, Hashable {
+    public let id: UUID
+    public var name: String
+    public var color: RGBAColor
+    public var remainTime: TimeInterval  // seconds
+
+    public init(id: UUID = .init(), name: String, color: Color, remainTime: TimeInterval) {
+        self.id = id
+        self.name = name
+        self.color = RGBAColor(color)
+        self.remainTime = remainTime
     }
 }

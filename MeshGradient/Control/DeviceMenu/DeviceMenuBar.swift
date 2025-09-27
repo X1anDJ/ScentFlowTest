@@ -1,10 +1,11 @@
-// DeviceMenuBar.swift
+// DeviceMenuBar.swift  — refactored to use Device (no DeviceProfile)
+
 import SwiftUI
 
 struct DeviceMenuBar: View {
     @ObservedObject var devices: DevicesStore
     @Binding var showScanner: Bool
-    var onSelect: (DeviceProfile) -> Void   // <-- changed from (DevicesStore.Device) -> Void
+    var onSelect: (Device) -> Void   // <- changed from DeviceProfile
 
     var body: some View {
         Menu {
