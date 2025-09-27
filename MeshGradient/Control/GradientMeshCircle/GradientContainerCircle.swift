@@ -28,70 +28,52 @@ struct GradientContainerCircle: View {
             ZStack {
                 // Mesh-based halo extending beyond the ring
                 if !isTemplate {
-                    MeshHaloShadowFromMesh(
-                        colors: displayColors,
-                        animate: animate,
-                        startDelta: tokens.glowStartInset,
-                        endDelta: tokens.glowRadiusAdded,
-                        softness: tokens.glowSoftness,
-                        opacity: tokens.glowOpacity
-                    )
-                    .opacity(meshOpacity)
-                    // Fade timing for halo (decoupled from the spring)
-                    .animation(.easeInOut(duration: fadingDuration), value: meshOpacity)
+                    
+                    
+                    
+                    
+                        MeshHaloShadowFromMesh(
+                            colors: displayColors,
+                            animate: animate,
+                            startDelta: tokens.glowStartInset,
+                            endDelta: tokens.glowRadiusAdded,
+                            softness: tokens.glowSoftness,
+                            opacity: tokens.glowOpacity
+                        )
+                        .opacity(meshOpacity)
+                        // Fade timing for halo (decoupled from the spring)
+                        .animation(.easeInOut(duration: fadingDuration), value: isOn)
+                    
+                        
+                        Circle()
+                            .fill(baseShadow)
+                            .shadow(color: baseShadow.opacity(isOn ? 0.2 : 1), radius: isOn  ? 10 : 30)
+                            .animation(.easeInOut(duration: fadingDuration), value: isOn)
+                            .opacity(!colors.isEmpty && isOn ? 0 : 1)  // When power is on and color is added, remove this shadow.
+                            .animation(.easeInOut(duration: fadingDuration), value: isOn && !colors.isEmpty)
+                            
+                    
+                    
                 }
                 
                 // Fill to block halo from bleeding inward
                 Circle()
                     .fill(
                         .background
-                        
                     )
-                    .opacity(animate ? 0.8 : 0.4)
-                    .shadow(
-                        color: baseShadow.opacity(animate ? 0.3 : 1.0),
-                        radius: animate ? 15 : 30, x: 0, y: 0
-                    )
-                    .animation(.spring(response: 0.6, dampingFraction: 0.4), value: animate)
+                    .opacity(isOn ? 0.95 : 0.9)
+                    .animation(.easeInOut(duration: fadingDuration), value: isOn)
                 
                 
-                Circle()
-                    //.inset(by: tokens.rimWidth)
-                    .fill(
-                        RadialGradient(
-                            gradient: Gradient(stops: [
-                                // Strongest in the center …
-                                .init(
-                                    color: (colorScheme == .dark
-                                            ? Theme.CircleFill.innerDark
-                                            : Theme.CircleFill.innerLight),
-                                    location: 0.0
-                                ),
-                                // … then fade out before the edge (tune 0.75–0.9 as you like)
-                                .init(
-                                    color: (colorScheme == .dark
-                                            ? Theme.CircleFill.outerDark
-                                            : Theme.CircleFill.outerLight),
-                                    location: 0.85
-                                )
-                            ]),
-                            center: .center,
-                            startRadius: 0,
-                            endRadius: .infinity // let SwiftUI size it to the shape’s bounds
-                        )
-                    )
-                    .opacity(animate ? 0.0 : 1.0)
-                    .animation(.easeInOut(duration: fadingDuration), value: animate)
-//                    .animation(.spring(response: 0.6, dampingFraction: 0.4), value: animate)
                 
-                // Glass ring (always visible)
-                GlassRing(width: tokens.rimWidth, isOn: animate)
+                // Glass ring
+                GlassRing(width: tokens.rimWidth, isOn: isOn)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
-                    .animation(.spring(response: 0.6, dampingFraction: 0.4), value: animate)
+                    .animation(.easeInOut(duration: fadingDuration), value: isOn)
                 
                 // Main mesh content inside the ring
-                MeshColorCircle(colors: displayColors, animate: animate)
+                MeshColorCircle(colors: displayColors.isEmpty ?  [.white.opacity(0.1),.white.opacity(0),.white.opacity(0.05),.white.opacity(0.05),.white.opacity(0.25)] : displayColors , animate: animate)
                     //.padding(tokens.rimWidth)
                     .opacity(meshOpacity)
                 // Fade timing for mesh (decoupled from the spring)
@@ -99,8 +81,8 @@ struct GradientContainerCircle: View {
             }
             .aspectRatio(1, contentMode: .fit)
             // Power-driven raise/drop ONLY
-            .scaleEffect(animate ? 1.0 : 0.95)
-            .animation(.spring(response: 0.4, dampingFraction: 0.4), value: animate) // scoped to scale
+            .scaleEffect(isOn ? 1.0 : 0.95)
+            .animation(.spring(response: 0.4, dampingFraction: 0.4), value: isOn) // scoped to scale
 //
 //            // Power Button Testing
 //            if !isTemplate {
@@ -159,8 +141,8 @@ private struct GlassRing: View {
                     
                     LinearGradient(
                         colors: [
-                            isOn ? .white.opacity(0.15) : .clear ,
-                            .black.opacity(0.1),
+                            isOn ? .white.opacity(0.1) : .clear ,
+                            isOn ? .black.opacity(0.1) : .clear,
                             isOn ? .gray.opacity(0.1) : .clear
                         ],
                         startPoint: .topLeading,
@@ -168,6 +150,7 @@ private struct GlassRing: View {
                     ) ,
                     lineWidth: width
                 )
+                .blur(radius: 3)
                 .overlay {
                     if isOn {
                         shape
@@ -201,7 +184,7 @@ private struct GlassRing: View {
                 .frame(width: side, height: side)
         }
         .aspectRatio(1, contentMode: .fit)
-        .transaction { $0.animation = nil }
+       // .transaction { $0.animation = nil }
     }
 }
 
@@ -209,32 +192,45 @@ private struct GlassRing: View {
 struct GradientContainerCircle_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            // Light mode, powered on
-            GradientContainerCircle(
-                colors: [.red, .orange, .yellow, .green, .blue, .purple],
-                animate: true,
-                isTemplate: false,
-                meshOpacity: 1.0,
-                isOn: true,
-                onToggle: {}
-            )
-            .padding()
-            .previewDisplayName("Light - On")
-            .preferredColorScheme(.light)
+//            // Light mode, powered on
+//            GradientContainerCircle(
+//                colors: [.red, .orange, .yellow, .green, .blue, .purple],
+//                animate: true,
+//                isTemplate: false,
+//                meshOpacity: 1.0,
+//                isOn: true,
+//                onToggle: {}
+//            )
+//            .padding()
+//            .previewDisplayName("Light - On")
+//            .preferredColorScheme(.light)
 
             // Dark mode, powered off
             GradientContainerCircle(
                 colors: [ ],
+                animate: false,
+                isTemplate: false,
+                meshOpacity: 0,
+                isOn: false,
+                onToggle: {}
+            )
+            .padding()
+            .previewDisplayName("Dark - Animation Off, power off")
+            .preferredColorScheme(.dark)
+            
+            GradientContainerCircle(
+                colors: [ ],
                 animate: true,
                 isTemplate: false,
-                meshOpacity: 0.6,
+                meshOpacity:1,
                 isOn: true,
                 onToggle: {}
             )
             .padding()
-            .previewDisplayName("Dark - Off")
+            .previewDisplayName("Dark - Animation Off, power on")
             .preferredColorScheme(.dark)
         }
         .previewLayout(.sizeThatFits)
+        
     }
 }

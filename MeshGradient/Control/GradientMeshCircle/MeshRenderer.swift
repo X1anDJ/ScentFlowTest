@@ -4,8 +4,7 @@ struct RendererConfig {
     var ensureMinStops: Bool = true
 }
 
-/// A renderer that produces a palette given the current wheel inputs.
-/// (We no longer depend on Mix/Scent.)
+/// A renderer that produces a palette given the current wheel inputs. 
 protocol MeshRenderer {
     func palette(
         orderedPodIDs: [UUID],

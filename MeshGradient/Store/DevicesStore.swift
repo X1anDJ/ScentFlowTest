@@ -116,7 +116,9 @@ final class DevicesStore: ObservableObject {
             ScentPod(name: "Bluebell",   color: .blue,   remainTime:  95*60),
             ScentPod(name: "Sandalwood", color: .purple, remainTime: 130*60),
         ]
-        let mock = Device(name: "Living Room Diffuser", insertedPods: pods, isMock: true)
-        setDevices([mock], select: mock.id)
+        
+        let mock = Device(name: "Living Room", insertedPods: pods, isMock: true)
+        let mock2 = Device(name: "Bedroom", insertedPods: pods, isMock: true)
+        setDevices([mock, mock2], select: mock.id)
     }
 }

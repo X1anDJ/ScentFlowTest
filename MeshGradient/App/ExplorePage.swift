@@ -56,7 +56,6 @@ struct ExplorePage: View {
             }
             .padding(16)
         }
-        .navigationTitle("Explore")
-        .background(Color(.systemBackground).ignoresSafeArea())
+
     }
 }

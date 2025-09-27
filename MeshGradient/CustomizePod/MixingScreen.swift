@@ -2,7 +2,7 @@ import SwiftUI
 
 struct MixingScreen: View {
     // ===== Only the states you actually change in UI flow =====
-    @State private var scale: Double = 0.2               // target scale; renderer eases
+    @State private var scale: Double = Double(AnimationConfig.targetScale(forActiveScents: 0))
     @State private var activeColors: Int = 0
     @State private var colorPickers: [Color] = Array(repeating: .white, count: 6)
     @State private var intensities:  [Double] = Array(repeating: 1.0,   count: 6)
@@ -11,63 +11,35 @@ struct MixingScreen: View {
     // Pulses to renderer (−1 = no pulse)
     @State private var addedIndexPulse:   Int32 = -1
     @State private var removedIndexPulse: Int32 = -1
-    
-    // Local UI state for category disclosure
-    @State private var isScentsOpen = false
-    @State private var selectedCategory: Category? = nil
-    
 
-    // ===== Build ShaderParams each frame (targets + pulses) =====
+    // Local UI state for sheet-based category picker
+    @State private var showingScentsSheet = false
+    @State private var selectedCategory: Category? = nil
+
+    // MixingScreen.swift
     private var shaderParams: ShaderParams {
-        // ===== Fixed “knob” constants since you’re not editing them in UI =====
-        let kSpeed: Float      = 1.4
-        let kWarp: Float       = 2.0
-        let kEdge: Float       = 0.7
-        let kSeparation: Float = 0.5
-        let kContrast: Float   = 0.8
-        
-        var p = ShaderParams()
-        p.speed      = kSpeed
-        p.scale      = Float(scale)     // target; renderer eases
-        p.warp       = kWarp
-        p.edge       = kEdge
-        p.separation = kSeparation
-        p.contrast   = kContrast
-        
-        // colors
+        var p = ShaderParams()                 // takes defaults for knobs
+        p.scale = Float(scale)                 // only value this screen actually drives
+
+        // Colors, masks, intensities (targets)
         let sims = colorPickers.map { $0.toSIMD4() }
-        p.color1 = sims[0]; p.color2 = sims[1]; p.color3 = sims[2]
-        p.color4 = sims[3]; p.color5 = sims[4]; p.color6 = sims[5]
-        
-        // masks derived from activeColors
-        p.mask1 = activeColors >= 1 ? 1 : 0
-        p.mask2 = activeColors >= 2 ? 1 : 0
-        p.mask3 = activeColors >= 3 ? 1 : 0
-        p.mask4 = activeColors >= 4 ? 1 : 0
-        p.mask5 = activeColors >= 5 ? 1 : 0
-        p.mask6 = activeColors >= 6 ? 1 : 0
-        
-        // intensities (targets)
-        p.intensity1 = Float(intensities[0])
-        p.intensity2 = Float(intensities[1])
-        p.intensity3 = Float(intensities[2])
-        p.intensity4 = Float(intensities[3])
-        p.intensity5 = Float(intensities[4])
-        p.intensity6 = Float(intensities[5])
-        
-        // explicit pulses
+        p.setColors(sims)
+        p.setMasks(activeCount: activeColors)
+        p.setIntensities(intensities.map(Float.init))
+
+        // Pulses for add/remove (edge-triggered)
         p.addedIndex   = addedIndexPulse
         p.removedIndex = removedIndexPulse
         return p
     }
-    
+
     var body: some View {
         let ballSize: CGFloat = 216
         
         VStack(spacing: 0) {
             // ===== Ball (unchanged visuals) =====
             ZStack {
-                MetalView(params: shaderParams)
+                MetalView(params: shaderParams, paused: showingScentsSheet)
                     .frame(width: ballSize, height: ballSize)
                     .clipShape(Circle())
                     .background(
@@ -77,49 +49,55 @@ struct MixingScreen: View {
                     )
                     .compositingGroup()
                 
-                glassCircle(ballSize)     // ← keep your 2026 glass API
+                glassCircle(ballSize)
                     .allowsHitTesting(false)
             }
-            .shadow(color: .black.opacity(0.1), radius: 24, x: 0, y: 0)
+            .shadow(color: .white.opacity(0.1), radius: 24, x: 0, y: 0)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 48)
+            .padding(.top, 48)
+            .padding(.bottom, 24)
             
-            // ===== Add Scents panel (unchanged UI flow, no tuning GroupBoxes) =====
-            let innerShape = RoundedRectangle(cornerRadius: 20, style: .continuous)
-            DisclosureGroup(isExpanded: $isScentsOpen) {
-                Group {
-                    if let cat = selectedCategory {
-                        categorySubOptionsGrid(for: cat)
-                    } else {
-                        categoriesGrid()
-                    }
-                }
-                .padding(.top, 10)
+            // ===== Add Scents panel (same layout; DisclosureGroup -> Button + .sheet) =====
+            //let innerShape = RoundedRectangle(cornerRadius: 20, style: .continuous)
+            Button {
+                showingScentsSheet = true
             } label: {
-                VStack(alignment: .leading, spacing: 0) {
-                    HStack {
-                        Text("Add Scents").font(.headline)
-                        Spacer()
-                        if isScentsOpen, let cat = selectedCategory {
-                            Text(cat.displayName)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
-                            isScentsOpen.toggle()
-                            if !isScentsOpen { selectedCategory = nil }
-                        }
-                    }
-                }
+//                VStack(alignment: .leading, spacing: 0) {
+//                    HStack {
+//                        Text("Add Scents").font(.headline)
+//                        Spacer()
+//                        if showingScentsSheet, let cat = selectedCategory {
+//                            Text(cat.displayName)
+//                                .font(.subheadline)
+//                                .foregroundStyle(.secondary)
+//                        }
+//                    }
+//                    
+//                }
+//                .contentShape(Rectangle())
+                
+                Text("Add Scents")
+                    .font(.headline)
             }
             .padding(12)
-            .background(.thinMaterial, in: innerShape)
+            .buttonStyle(.glass)
+            .controlSize(.large)
+            .sheet(isPresented: $showingScentsSheet) {
+                AddScentsView(
+                    selectedCategory: $selectedCategory,
+                    selectedNames: Array(scentNames.prefix(activeColors)),   // <- live selection
+                    onSelect: { color, name in
+                        addScentFromCategory(color: color, name: name)       // <- parent mutates state
+                    }
+                )
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+            }
+
+            
             
             // ===== Active scents list (unchanged) =====
-            VStack(spacing: 10) {
+            ScrollView() {
                 ForEach(0..<activeColors, id: \.self) { i in
                     ScentControllerSlider(
                         name: scentNames[i],
@@ -130,6 +108,8 @@ struct MixingScreen: View {
                     )
                 }
             }
+            .padding(12)
+            
             
             // ===== CTA (unchanged; keep the glass button style) =====
             Button {
@@ -143,56 +123,10 @@ struct MixingScreen: View {
                 .padding(.vertical, 14)
             }
             .buttonStyle(.glass)    // ← unchanged per your note
-            .controlSize(.extraLarge)
+            .controlSize(.regular)
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 24)
 
-    }
-    
-    
-    // MARK: - Categories UI (unchanged visuals)
-    
-    private func categoriesGrid() -> some View {
-        let cols = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
-        return LazyVGrid(columns: cols, spacing: 14) {
-            ForEach(Category.allCases, id: \.self) { cat in
-                VStack(spacing: 8) {
-                    solidSwatch(tint: cat.color)
-                        .onTapGesture {
-                            withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
-                                selectedCategory = cat
-                                isScentsOpen = true
-                            }
-                        }
-                    Text(cat.label)
-                        .font(.caption)
-                }
-            }
-        }
-    }
-    
-    private func categorySubOptionsGrid(for cat: Category) -> some View {
-        let cols = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
-        return LazyVGrid(columns: cols, spacing: 14) {
-            ForEach(cat.optionsEN, id: \.self) { name in
-                VStack(spacing: 8) {
-                    solidSwatch(tint: cat.color)
-                        .onTapGesture {
-                            addScentFromCategory(color: cat.color, name: name)
-                        }
-                    Text(name)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                }
-            }
-        }
-    }
-    
-    private func solidSwatch(tint: Color) -> some View {
-        ZStack { Circle().fill(tint.opacity(0.7)) }
-            .frame(width: 44, height: 44)
     }
     
     // MARK: - Mutations (targets + pulses; visuals unchanged)
@@ -207,42 +141,54 @@ struct MixingScreen: View {
         
         activeColors += 1
         
-        // UI intent: fade in and nudge scale target
+        // UI intent: fade in; scale target derived from policy
         intensities[idx] = 1.0
-        scale = min(scale + 0.2, 1)
+//        scale = min(scale + 0.5, 1)
+        scale = Double(AnimationConfig.targetScale(forActiveScents: activeColors))
         
         // explicit add pulse (edge-triggered)
         addedIndexPulse = Int32(idx)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { addedIndexPulse = -1 }
-        
-        withAnimation(.easeInOut(duration: 0.35)) {
-            isScentsOpen = false
-            selectedCategory = nil
-        }
+//        
+//        withAnimation(.easeInOut(duration: 0.35)) {
+//            showingScentsSheet = false
+//            selectedCategory = nil
+//        }
     }
     
     private func removeScent(at i: Int) {
         guard activeColors > 0, i < activeColors else { return }
-        
-        // pulse BEFORE compaction so renderer can ghost the correct slot
+
+        // Tell renderer which slot to animate down to 0
         removedIndexPulse = Int32(i)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { removedIndexPulse = -1 }
-        
-        if i < activeColors - 1 {
-            for j in i..<(activeColors - 1) {
-                colorPickers[j] = colorPickers[j + 1]
-                intensities[j]  = intensities[j + 1]
-                scentNames[j]   = scentNames[j + 1]
+
+        // Same logic as a slider move: set target to 0 (renderer tweens it)
+        intensities[i] = 0.0
+
+        // After the fade, if still zero, compact the arrays
+        let fade = 2.0  // keep in sync with Renderer.intensityAnimDuration
+        DispatchQueue.main.asyncAfter(deadline: .now() + fade) {
+            // Guard in case user changed their mind
+            guard i < activeColors, intensities[i] == 0 else { return }
+
+            if i < activeColors - 1 {
+                for j in i..<(activeColors - 1) {
+                    colorPickers[j] = colorPickers[j + 1]
+                    intensities[j]  = intensities[j + 1]
+                    scentNames[j]   = scentNames[j + 1]
+                }
             }
+            activeColors -= 1
+            colorPickers[activeColors] = .white
+            intensities[activeColors]  = 1.0
+            scentNames[activeColors]   = "Scent \(activeColors + 1)"
+
+            // Update scale target after compaction
+            scale = Double(AnimationConfig.targetScale(forActiveScents: activeColors))
         }
-        activeColors -= 1
-        colorPickers[activeColors] = .white
-        intensities[activeColors]  = 1.0
-        scentNames[activeColors]   = "Scent \(activeColors + 1)"
-        
-        // nudge scale down (target); renderer eases
-        scale = max(scale - 0.5, 1.0)
     }
+
 }
 
 // MARK: - Glass helper for the ZStack ball (UNCHANGED)

@@ -51,7 +51,7 @@ struct ScentControllerSlider: View {
             
             
 
-            Text(name + " Scent")
+            Text(name )
                 .lineLimit(1)
                 .font(.footnote)
                 .frame(width: 100, alignment: .leading)
@@ -66,7 +66,7 @@ struct ScentControllerSlider: View {
             if let onRemove {
                 Button(role: .destructive, action: onRemove) {
                     Image(systemName: "multiply.circle.fill")
-                        .symbolRenderingMode(.palette)
+                        //.symbolRenderingMode(.palette)
                         .font(.title3)
                         .accessibilityLabel("Remove \(name)")
                 }

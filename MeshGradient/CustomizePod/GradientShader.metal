@@ -107,7 +107,7 @@ fragment float4 fragment_main(VOut in [[stage_in]], constant Params& P [[buffer(
     
     
     // Double the effective intensity *here* (rendering only)
-    const float kIntensityScale = 2.0;
+    const float kIntensityScale = 3.0;
     
     float sharp = mix(1.0, 6.0, clamp(P.separation / 10.0, 0.0, 1.0));
     float d[6];

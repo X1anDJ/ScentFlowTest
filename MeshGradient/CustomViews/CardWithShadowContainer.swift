@@ -61,7 +61,7 @@ struct CardWithShadowContainer<LabelContent: View, Background: View>: View {
         }
 //        .frame(height: height)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .shadow(color: .black.opacity(0.12), radius: 16, x: 0, y: 12)
+        .shadow(color: .white.opacity(0.1), radius: 16, x: 0, y: 12)
         .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous)) // large hit target when wrapped
     }
 }

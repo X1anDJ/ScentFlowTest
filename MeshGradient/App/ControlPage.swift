@@ -6,13 +6,13 @@ struct ControlPage: View {
 
     // MARK: - Tunables
     private enum UI {
-        static let wheelPadding: CGFloat    = 94
+        static let wheelPadding: CGFloat    = 80
         static let baseVPadding: CGFloat    = 24
         static let expandedScale: CGFloat   = 0.85
         static let collapsedScale: CGFloat  = 1.00
         static let cardHPad: CGFloat        = 16
         static let cardBottomPad: CGFloat   = 16
-        static let collapsedCardHeight: CGFloat = 300
+        static let collapsedCardHeight: CGFloat = 310
     }
 
     // MARK: - View Model & Stores
@@ -93,7 +93,8 @@ struct ControlPage: View {
                 .shadow(radius: 6)
             }
         }
-        .navigationTitle("ScentsFlow")
+        //.navigationTitle("ScentsFlow")
+        //.navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showScanner) { ScannerSheet() }
 
         // Persist per-device on changes
@@ -123,5 +124,6 @@ struct ControlPage: View {
                 }
             }
         }
+        
     }
 }

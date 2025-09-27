@@ -15,7 +15,7 @@ struct ScentControllerStepper: View {
     var body: some View {
         HStack(spacing: 0) {
             if let focused {
-                Text("\(focused.name) Scent")
+                Text("\(focused.name)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
 

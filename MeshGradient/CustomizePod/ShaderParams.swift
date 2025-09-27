@@ -5,11 +5,11 @@ import simd
 /// Renderer owns the animated "current" values and eases toward these.
 struct ShaderParams: Equatable {
     // Knobs (targets)
-    var speed: Float      = 1.8
-    var scale: Float      = 0.2   
+    var speed: Float      = 1.4
+    var scale: Float      = AnimationConfig.minScale
     var warp:  Float      = 2.0
     var edge:  Float      = 0.5
-    var separation: Float = 6.0
+    var separation: Float = 0.5
     var contrast:   Float = 1.4
 
     // View aspect (w/h, 1)

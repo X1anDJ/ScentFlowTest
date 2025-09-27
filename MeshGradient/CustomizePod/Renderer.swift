@@ -15,6 +15,49 @@ final class Renderer: NSObject, MTKViewDelegate {
     // MARK: - Time
     private var startTime: CFTimeInterval = CACurrentMediaTime()
 
+    // MARK: - Pause clock compensation (handles tweens started during pause)
+    private var isPaused: Bool = false
+    private var pauseBeganAt: CFTimeInterval? = nil
+
+    func setPaused(_ paused: Bool) {
+        if paused {
+            if !isPaused {
+                isPaused = true
+                pauseBeganAt = CACurrentMediaTime()
+            }
+            return
+        }
+
+        // Resuming
+        guard isPaused, let t0 = pauseBeganAt else {
+            isPaused = false
+            pauseBeganAt = nil
+            return
+        }
+
+        let now = CACurrentMediaTime()
+        let dt  = now - t0
+
+        // 1) Base shader time: shift by the paused duration so shader time doesn't jump
+        startTime += dt
+
+        // 2) Any animation that STARTED BEFORE the pause gets shifted forward by dt.
+        //    Any animation that STARTED DURING the pause gets retimed to start NOW.
+        if scaleAnimStart < t0 { scaleAnimStart += dt } else { scaleAnimStart = now }
+
+        for i in 0..<6 {
+            if intensityAnimStart[i] < t0 { intensityAnimStart[i] += dt } else { intensityAnimStart[i] = now }
+            if ghostAnimStart[i]     < t0 { ghostAnimStart[i]     += dt } else { ghostAnimStart[i]     = now }
+            // If you have other per-scent animations (e.g. pulse starts), apply the same pattern:
+            // if addPulseStart[i] < t0 { addPulseStart[i] += dt } else { addPulseStart[i] = now }
+            // if removePulseStart[i] < t0 { removePulseStart[i] += dt } else { removePulseStart[i] = now }
+        }
+
+        isPaused = false
+        pauseBeganAt = nil
+    }
+
+    
     // MARK: - Incoming UI params
     /// Latest values pushed from SwiftUI each frame.
     /// IMPORTANT: This implementation animates ONLY when a scent is added or removed.
@@ -22,9 +65,11 @@ final class Renderer: NSObject, MTKViewDelegate {
     var uiParams = ShaderParams() {
         didSet {
             // 1) Scale tween (unchanged)
-            if uiParams.scale != targetScale {
+            
+            let nextTarget = AnimationConfig.clamp(uiParams.scale)
+            if nextTarget != targetScale {
                 scaleFrom = currentScale
-                targetScale = uiParams.scale
+                targetScale = nextTarget
                 scaleAnimStart = CACurrentMediaTime()
                 scaleAnimating = true
             }
@@ -46,12 +91,12 @@ final class Renderer: NSObject, MTKViewDelegate {
             // Always update targets from UI (sliders are immediate)
             for i in 0..<6 { targetIntensity[i] = newIntensities[i] }
 
-            // 3) ADD detection
-            // Preferred: explicit pulse via uiParams.addedIndex (0...5), else fallback to mask rising edge.
+            // 3) ADD detection (prefer explicit pulse; else mask rising edges)
             var handledAddIndex: Int? = nil
-            if let added = getOptionalIndex(from: uiParams, key: "addedIndex"), added >= 0 && added < 6 {
+            let added = uiParams.addedIndex
+            if added >= 0 && added < 6 {
                 if added != lastAddedIndex {
-                    startFadeIn(at: Int(added), to: newIntensities[Int(added)])
+                    startFadeIn(at: Int(added), to: targetIntensity[Int(added)])
                 }
                 lastAddedIndex = added
                 handledAddIndex = Int(added)
@@ -61,20 +106,21 @@ final class Renderer: NSObject, MTKViewDelegate {
             if handledAddIndex == nil {
                 for i in 0..<6 {
                     if prevMasks[i] <= 0.0 && newMasks[i] > 0.0 {
-                        // Mask rose 0->1: treat as an "add"
-                        startFadeIn(at: i, to: newIntensities[i])
+                        startFadeIn(at: i, to: targetIntensity[i])
                     }
                 }
             }
 
-            // 4) REMOVE detection
-            // Preferred: explicit pulse via uiParams.removedIndex (0...5), else fallback to mask falling edge.
+            // 4) REMOVE detection (prefer explicit pulse; else mask falling edges)
             var handledRemoveIndex: Int? = nil
-            if let removed = getOptionalIndex(from: uiParams, key: "removedIndex"), removed >= 0 && removed < 6 {
+            let removed = uiParams.removedIndex
+            if removed >= 0 && removed < 6 {
                 if removed != lastRemovedIndex {
-                    startFadeOutGhost(at: Int(removed),
-                                      color: prevColors[Int(removed)],
-                                      from: currentIntensity[Int(removed)])
+                    startFadeOutGhost(
+                        at: Int(removed),
+                        color: prevColors[Int(removed)],
+                        from: currentIntensity[Int(removed)]
+                    )
                 }
                 lastRemovedIndex = removed
                 handledRemoveIndex = Int(removed)
@@ -84,13 +130,11 @@ final class Renderer: NSObject, MTKViewDelegate {
             if handledRemoveIndex == nil {
                 for i in 0..<6 {
                     if prevMasks[i] > 0.0 && newMasks[i] <= 0.0 {
-                        // Mask fell 1->0: treat as a "remove"
-                        startFadeOutGhost(at: i,
-                                          color: prevColors[i],
-                                          from: currentIntensity[i])
+                        startFadeOutGhost(at: i, color: prevColors[i], from: currentIntensity[i])
                     }
                 }
             }
+
 
             // 5) Update previous snapshot for next diff
             prevColors = newColors
@@ -169,6 +213,13 @@ final class Renderer: NSObject, MTKViewDelegate {
         targetIntensity  = prevIntens
         currentIntensity = prevIntens
         fromIntensity    = prevIntens
+        
+        // Renderer.swift (inside init after prev* arrays are seeded)
+        let s = AnimationConfig.clamp(uiParams.scale)
+        currentScale = s
+        targetScale  = s
+        scaleFrom    = s
+
     }
 
     private func buildPipeline(mtkView: MTKView) {
@@ -321,22 +372,6 @@ final class Renderer: NSObject, MTKViewDelegate {
         ghostFrom[i]      = max(0.0, from)
         ghostValue[i]     = ghostFrom[i]
         ghostAnimStart[i] = CACurrentMediaTime()
-    }
-
-    /// Returns an optional Int32 field from `uiParams` by name, if present.
-    /// This allows the Renderer to compile even if your ShaderParams doesn't yet
-    /// declare `addedIndex` or `removedIndex`. If not present, returns nil.
-    private func getOptionalIndex(from params: ShaderParams, key: String) -> Int32? {
-        // Try to access via Mirror; falls back to nil if not present
-        let m = Mirror(reflecting: params)
-        for child in m.children {
-            if child.label == key {
-                if let v = child.value as? Int32 { return v }
-                if let v = child.value as? Int { return Int32(v) }
-                if let v = child.value as? UInt32 { return Int32(bitPattern: v) }
-            }
-        }
-        return nil
     }
 
     private func mix(_ a: Float, _ b: Float, _ t: Float) -> Float { a + (b - a) * t }

@@ -56,29 +56,22 @@ public extension View {
 
 
 extension Theme {
+    // Base wheel's white/black shadow for gradient mesh circle
     enum Shadow {
         static let wheelLight = Color.black.opacity(0.2)
-        static let wheelDark  = Color.white.opacity(0.15)
+        static let wheelDark  = Color.white.opacity(0.7)
     }
-//    
-//    enum CircleFill {
-//        static let light = Color.gray.opacity(0.05)
-//        static let dark  = Color.gray.opacity(0.2)
-//        
-//        static func color(for scheme: ColorScheme) -> Color {
-//            scheme == .dark ? dark : light
-//        }
-//    }
+    
 }
 
 extension Theme {
     enum CircleFill {
         static let innerLight = Color.gray.opacity(0.1)
         static let outerLight = Color.gray.opacity(0)
-        static let innerDark  = Color.gray.opacity(0.14)
-        static let outerDark  = Color.gray.opacity(0.02)
+        static let innerDark  = Color.white.opacity(0.14)
+        static let outerDark  = Color.white.opacity(0.02)
 
-        static func gradient(for scheme: ColorScheme, radius: CGFloat) -> RadialGradient {
+        static func WhiteShadowGradient(for scheme: ColorScheme, radius: CGFloat) -> RadialGradient {
             let inner = (scheme == .dark) ? innerDark : innerLight
             let outer = (scheme == .dark) ? outerDark : outerLight
             return RadialGradient(
