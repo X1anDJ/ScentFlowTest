@@ -35,8 +35,8 @@ struct MixingScreen: View {
 
     var body: some View {
         let ballSize: CGFloat = 216
-        
-        VStack(spacing: 0) {
+
+        VStack(spacing: 12) {
             // ===== Ball (unchanged visuals) =====
             ZStack {
                 MetalView(params: shaderParams, paused: showingScentsSheet)
@@ -48,87 +48,99 @@ struct MixingScreen: View {
                         )
                     )
                     .compositingGroup()
-                
+
                 glassCircle(ballSize)
                     .allowsHitTesting(false)
             }
-            .shadow(color: .white.opacity(0.1), radius: 24, x: 0, y: 0)
+            .shadow(color: .white.opacity(0.15), radius: 24, x: 0, y: 0)
             .frame(maxWidth: .infinity)
-            .padding(.top, 48)
-            .padding(.bottom, 24)
-            
-            // ===== Add Scents panel (same layout; DisclosureGroup -> Button + .sheet) =====
-            //let innerShape = RoundedRectangle(cornerRadius: 20, style: .continuous)
-            Button {
-                showingScentsSheet = true
-            } label: {
-//                VStack(alignment: .leading, spacing: 0) {
-//                    HStack {
-//                        Text("Add Scents").font(.headline)
-//                        Spacer()
-//                        if showingScentsSheet, let cat = selectedCategory {
-//                            Text(cat.displayName)
-//                                .font(.subheadline)
-//                                .foregroundStyle(.secondary)
-//                        }
-//                    }
-//                    
-//                }
-//                .contentShape(Rectangle())
-                
-                Text("Add Scents")
-                    .font(.headline)
-            }
-            .padding(12)
-            .buttonStyle(.glass)
-            .controlSize(.large)
-            .sheet(isPresented: $showingScentsSheet) {
-                AddScentsView(
-                    selectedCategory: $selectedCategory,
-                    selectedNames: Array(scentNames.prefix(activeColors)),   // <- live selection
-                    onSelect: { color, name in
-                        addScentFromCategory(color: color, name: name)       // <- parent mutates state
-                    }
-                )
-                .presentationDetents([.medium])
-                .presentationDragIndicator(.visible)
-            }
+            .padding(.vertical, 48)
 
-            
-            
-            // ===== Active scents list (unchanged) =====
-            ScrollView() {
-                ForEach(0..<activeColors, id: \.self) { i in
-                    ScentControllerSlider(
-                        name: scentNames[i],
-                        color: colorPickers[i],
-                        displayed: intensities[i],
-                        onChangeDisplayed: { intensities[i] = $0 },   // UI writes target; renderer eases
-                        onRemove: { removeScent(at: i) }
+            VStack {
+                HStack {
+                    Text("Mix 2 or more scents")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        
+                    Spacer()
+                }
+               
+                if activeColors != 0 {
+                    VStack {
+                        Section {
+                            ForEach(0..<activeColors, id: \.self) { i in
+                                ListCellScentSlider(
+                                    name: scentNames[i],
+                                    color: colorPickers[i],
+                                    displayed: intensities[i],
+                                    onChangeDisplayed: { intensities[i] = $0 },
+                                    onRemove: { removeScent(at: i) }
+                                )
+                                
+                            }
+                            .padding(.vertical, 6)
+                        }
+                        
+                        .padding(.horizontal, 12)
+
+
+                    }
+                    .padding(.vertical, 8)    // Small space before and after first/last item
+                    //.listStyle(.grouped)
+                    //.scrollContentBackground(.hidden)
+    //                .background(.thinMaterial)
+                    .adaptiveGlassBackground(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(.white.opacity(0.12), lineWidth: 0.7)
+                            .blendMode(.overlay)
                     )
                 }
-            }
-            .padding(12)
-            
-            
-            // ===== CTA (unchanged; keep the glass button style) =====
-            Button {
-                // start order flow
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "bag.fill").font(.headline)
-                    Text("Order Scent").fontWeight(.semibold)
+                
+                
+                
+                // Add Scent row as the last item (only shown when < 6)
+                if activeColors < 6 {
+                    AddScentListRow {
+                        showingScentsSheet = true
+                    }
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-            }
-            .buttonStyle(.glass)    // ← unchanged per your note
-            .controlSize(.regular)
-        }
-        .padding(.horizontal, 24)
+                
+                Spacer()
 
+                // ===== Button row (removed bottom Add Scent; only Order remains) =====
+                HStack {
+                    Button {
+                        // start order flow
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "bag.fill").font(.headline)
+                            Text("Order Scent").fontWeight(.semibold)
+                        }
+                    }
+                    .buttonStyle(.glass)    // unchanged per your note
+                    .controlSize(.large)
+                    .disabled(activeColors < 2)
+                    .opacity(activeColors < 2 ? 0.5 : 1.0)
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        // ===== Sheet remains the same; triggered from the Add row in the List =====
+        .sheet(isPresented: $showingScentsSheet) {
+            AddScentsView(
+                selectedCategory: $selectedCategory,
+                selectedNames: Array(scentNames.prefix(activeColors)),
+                onSelect: { color, name in
+                    addScentFromCategory(color: color, name: name)
+                }
+            )
+            .modifier(CustomSheetDetents())
+//            .presentationDetents([.medium])
+//            .presentationDragIndicator(.hidden)
+        }
+        .environment(\.colorScheme, .dark)
     }
-    
     // MARK: - Mutations (targets + pulses; visuals unchanged)
     
     private func addScentFromCategory(color: Color, name: String) {
@@ -158,37 +170,29 @@ struct MixingScreen: View {
     
     private func removeScent(at i: Int) {
         guard activeColors > 0, i < activeColors else { return }
-
-        // Tell renderer which slot to animate down to 0
+        
+        // pulse BEFORE compaction so renderer can ghost the correct slot
         removedIndexPulse = Int32(i)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { removedIndexPulse = -1 }
-
-        // Same logic as a slider move: set target to 0 (renderer tweens it)
-        intensities[i] = 0.0
-
-        // After the fade, if still zero, compact the arrays
-        let fade = 2.0  // keep in sync with Renderer.intensityAnimDuration
-        DispatchQueue.main.asyncAfter(deadline: .now() + fade) {
-            // Guard in case user changed their mind
-            guard i < activeColors, intensities[i] == 0 else { return }
-
-            if i < activeColors - 1 {
-                for j in i..<(activeColors - 1) {
-                    colorPickers[j] = colorPickers[j + 1]
-                    intensities[j]  = intensities[j + 1]
-                    scentNames[j]   = scentNames[j + 1]
-                }
+        
+        if i < activeColors - 1 {
+            for j in i..<(activeColors - 1) {
+                colorPickers[j] = colorPickers[j + 1]
+                intensities[j]  = intensities[j + 1]
+                scentNames[j]   = scentNames[j + 1]
             }
-            activeColors -= 1
-            colorPickers[activeColors] = .white
-            intensities[activeColors]  = 1.0
-            scentNames[activeColors]   = "Scent \(activeColors + 1)"
-
-            // Update scale target after compaction
-            scale = Double(AnimationConfig.targetScale(forActiveScents: activeColors))
         }
+        activeColors -= 1
+        colorPickers[activeColors] = .white
+        intensities[activeColors]  = 1.0
+        scentNames[activeColors]   = "Scent \(activeColors + 1)"
+        
+        // nudge scale down (target); renderer eases
+        //scale = max(scale - 0.5, 1.0)
+        
+        // derive scale from policy; renderer eases
+        scale = Double(AnimationConfig.targetScale(forActiveScents: activeColors))
     }
-
 }
 
 // MARK: - Glass helper for the ZStack ball (UNCHANGED)
@@ -202,5 +206,21 @@ private func glassCircle(_ size: CGFloat) -> some View {
         Circle()
             .fill(.ultraThinMaterial)
             .frame(width: size, height: size)
+    }
+}
+
+private struct CustomSheetDetents: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 16.4, *) {
+            content
+                // 0.6 ~= medium (0.5) * 1.2
+                .presentationDetents([.fraction(0.6)])
+                .presentationDragIndicator(.hidden)
+        } else {
+            // Fallback: custom detents not available before iOS 16.4
+            content
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.hidden)
+        }
     }
 }

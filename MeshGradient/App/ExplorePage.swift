@@ -34,7 +34,8 @@ struct ExplorePage: View {
                 .buttonStyle(.plain)
 
                 NavigationLink {
-                    //CustomizePodPage()   // Temperoy holder, implement later.
+                    Text("More coming soon")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } label: {
                     CardWithShadowContainer(
                         title: "Official Templates",
@@ -56,6 +57,7 @@ struct ExplorePage: View {
             }
             .padding(16)
         }
+        .scrollDisabled(true)
 
     }
 }

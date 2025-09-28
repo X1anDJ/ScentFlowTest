@@ -1,26 +1,30 @@
+// AddScentsView.swift
 import SwiftUI
 
 struct AddScentsView: View {
+    @Environment(\.dismiss) private var dismiss
     @Binding var selectedCategory: Category?
     /// Names of scents currently selected (top `activeColors` in the parent)
     let selectedNames: [String]
     /// Called when a new scent is chosen (no-op if already at capacity handled here)
     let onSelect: (_ color: Color, _ name: String) -> Void
-
+    
     // derived state
     private var selectedSet: Set<String> { Set(selectedNames) }
     private var selectedCount: Int { selectedNames.count }
     private let capacity: Int = 6
-
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 12) {
                 // live selection count
-                Text("\(selectedCount)/\(capacity) selected")
+                Text("\(selectedCount) selected")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                    .padding(.top, 6)
-                
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
                 Spacer()
                 
                 Group {
@@ -37,41 +41,33 @@ struct AddScentsView: View {
                                     }
                                 }
                             }
+                        
+                        Spacer()
+                        
                     } else {
-                        categoriesGrid()
+                        // Use the radial ring instead of a grid
+                        categoriesRing()
+                            .frame(height: 250)
                             .navigationTitle("All Categories")
                             .navigationBarTitleDisplayMode(.inline)
+                        
+                        Spacer()
+                        
+                        HStack {
+                            Button {
+                                dismiss()
+                            } label: {
+                                Text("Save")
+                                    .font(.headline.bold())
+                            }
+                            .buttonStyle(.glass)     // matches your app’s style
+                            .controlSize(.large)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
                     }
                 }
                 .padding(.horizontal, 16)
-                Spacer()
-            }
-        }
-    }
-}
-
-// MARK: - All Categories (grid)
-
-private extension AddScentsView {
-    func categoriesGrid() -> some View {
-        let cols = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
-        return LazyVGrid(columns: cols, spacing: 14) {
-            ForEach(Category.allCases, id: \.self) { cat in
-                // how many selected from this category
-                let countInCat = cat.optionsEN.reduce(into: 0) { if selectedSet.contains($1) { $0 += 1 } }
-                VStack(spacing: 8) {
-                    CategorySwatchButton(
-                        tint: cat.color,
-                        countSelectedInCategory: countInCat
-                    ) {
-                        withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
-                            selectedCategory = cat
-                        }
-                    }
-                    Text(countInCat > 0 ? "\(cat.label) x\(countInCat)" : cat.label)
-                        .font(.caption)
-                        .foregroundStyle(countInCat > 0 ? .primary : .secondary)
-                }
             }
         }
     }
@@ -86,7 +82,7 @@ private extension AddScentsView {
             ForEach(cat.optionsEN, id: \.self) { name in
                 let isSelected = selectedSet.contains(name)
                 let isFull = !isSelected && selectedCount >= capacity
-
+                
                 VStack(spacing: 8) {
                     ScentSwatchButton(
                         tint: cat.color,
@@ -111,39 +107,22 @@ private extension AddScentsView {
     }
 }
 
-// MARK: - Button building blocks
+// MARK: - Radial categories bridge
 
-/// Category tile: always filled; if any scent selected in that category -> full opacity + colored shadow.
-private struct CategorySwatchButton: View {
-    var tint: Color
-    var countSelectedInCategory: Int
-    var action: () -> Void
-
-    @State private var isPressed = false
-
-    var body: some View {
-        Button(action: action) {
-            Circle()
-                .fill(tint.opacity(countSelectedInCategory > 0 ? 1.0 : 0.6))
-                .modifier(GlassIfAvailable())
-                .frame(width: 44, height: 44)
-                .shadow(
-                    color: countSelectedInCategory > 0 ? tint.opacity(0.6) : .clear,
-                    radius: countSelectedInCategory > 0 ? 10 : 0,
-                    x: 0, y: countSelectedInCategory > 0 ? 4 : 0
-                )
-                .scaleEffect(isPressed ? 0.95 : 1.0)
-                .animation(.easeOut(duration: 0.12), value: isPressed)
+private extension AddScentsView {
+    func categoriesRing() -> some View {
+        RadialCategoryRing(
+            items: Array(Category.allCases),
+            selectedSet: selectedSet
+        ) { cat in
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
+                selectedCategory = cat
+            }
         }
-        .buttonStyle(.plain)
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in if !isPressed { isPressed = true } }
-                .onEnded { _ in isPressed = false }
-        )
-        .accessibilityLabel(Text(countSelectedInCategory > 0 ? "Selected category" : "Category"))
     }
 }
+
+// MARK: - Button building blocks used in this file
 
 /// Scent tile (suboptions): ring when not selected; filled when selected; never shows a shadow.
 private struct ScentSwatchButton: View {
@@ -151,12 +130,15 @@ private struct ScentSwatchButton: View {
     var isSelected: Bool
     var disabled: Bool
     var action: () -> Void
-
+    
     @State private var isPressed = false
-
+    
     var body: some View {
         Button(action: action) {
             ZStack {
+                // Invisible fill so the whole circle is a hit target
+                Circle().fill(Color.clear)
+
                 if isSelected {
                     Circle()
                         .fill(tint)
@@ -164,10 +146,10 @@ private struct ScentSwatchButton: View {
                 } else {
                     Circle()
                         .strokeBorder(tint, lineWidth: 3)
-                        .background(Circle().fill(Color.clear))
                 }
             }
             .frame(width: 44, height: 44)
+            .contentShape(Circle())            // full circle is tappable (not just the ring)
             .opacity(disabled ? 0.5 : 1.0)
             .scaleEffect(isPressed ? 0.95 : 1.0)
             .animation(.easeOut(duration: 0.12), value: isPressed)
@@ -183,9 +165,8 @@ private struct ScentSwatchButton: View {
     }
 }
 
-// MARK: - Glass effect helper
-
-private struct GlassIfAvailable: ViewModifier {
+// MARK: - Glass effect helper (made internal so other files can use it)
+struct GlassIfAvailable: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
             content.glassEffect()
