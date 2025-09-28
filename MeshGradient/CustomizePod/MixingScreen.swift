@@ -132,13 +132,15 @@ struct MixingScreen: View {
                 selectedCategory: $selectedCategory,
                 selectedNames: Array(scentNames.prefix(activeColors)),
                 onSelect: { color, name in
-                    addScentFromCategory(color: color, name: name)
+                    addScentFromCategory(color: color, name: name)   // existing behavior
+                },
+                onDeselect: { name in
+                    removeScent(named: name)                         // NEW: reuse existing logic
                 }
             )
             .modifier(CustomSheetDetents())
-//            .presentationDetents([.medium])
-//            .presentationDragIndicator(.hidden)
         }
+
         .environment(\.colorScheme, .dark)
     }
     // MARK: - Mutations (targets + pulses; visuals unchanged)
@@ -166,6 +168,12 @@ struct MixingScreen: View {
 //            showingScentsSheet = false
 //            selectedCategory = nil
 //        }
+    }
+    
+    private func removeScent(named name: String) {
+        if let idx = scentNames.prefix(activeColors).firstIndex(of: name) {
+            removeScent(at: idx)
+        }
     }
     
     private func removeScent(at i: Int) {

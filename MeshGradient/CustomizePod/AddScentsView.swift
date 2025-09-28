@@ -8,6 +8,7 @@ struct AddScentsView: View {
     let selectedNames: [String]
     /// Called when a new scent is chosen (no-op if already at capacity handled here)
     let onSelect: (_ color: Color, _ name: String) -> Void
+    let onDeselect: (_ name: String) -> Void
     
     // derived state
     private var selectedSet: Set<String> { Set(selectedNames) }
@@ -109,18 +110,54 @@ private extension AddScentsView {
 
 // MARK: - Radial categories bridge
 
+// AddScentsView.swift (snippet)
 private extension AddScentsView {
     func categoriesRing() -> some View {
         RadialCategoryRing(
             items: Array(Category.allCases),
-            selectedSet: selectedSet
-        ) { cat in
-            withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
-                selectedCategory = cat
+            selectedSet: selectedSet,
+            onSelect: { cat, name in
+                onSelect(cat.color, name)
+            },
+            onDeselect: { name in
+                onDeselect(name)
             }
-        }
+        )
+        // .frame(height: 250)  // keep if you're constraining height here
     }
 }
+
+
+struct CategorySwatchButton: View {
+    var tint: Color
+    var countSelectedInCategory: Int
+    var action: () -> Void
+    
+    @State private var isPressed = false
+    
+    var body: some View {
+        Button(action: action) {
+            Circle()
+                .fill(tint.opacity(countSelectedInCategory > 0 ? 1.0 : 0.5))
+                .modifier(GlassIfAvailable())
+                .frame(width: 44, height: 44)
+                .shadow(
+                    color: countSelectedInCategory > 0 ? tint.opacity(0.8) : .clear,
+                    radius: countSelectedInCategory > 0 ? 10 : 0
+                )
+                .scaleEffect(isPressed ? 0.9 : 1.0)
+                .animation(.easeOut(duration: 0.12), value: isPressed)
+        }
+        .buttonStyle(.plain)
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in if !isPressed { isPressed = true } }
+                .onEnded { _ in isPressed = false }
+        )
+        .accessibilityLabel(Text(countSelectedInCategory > 0 ? "Selected category" : "Category"))
+    }
+}
+
 
 // MARK: - Button building blocks used in this file
 
