@@ -46,17 +46,6 @@ struct CardWithShadowContainer<LabelContent: View, Background: View>: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 12)
 
-//                // Bottom description area
-//                HStack(spacing: 12) {
-//                    labelContent()
-//                        .foregroundStyle(.white)
-//                }
-////                .padding(.horizontal, 16)
-////                .padding(.vertical, 12)
-//                .frame(maxWidth: .infinity, alignment: .leading)
-//                .background(.ultraThinMaterial)
-////                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-////                .padding(12)
             }
         }
 //        .frame(height: height)

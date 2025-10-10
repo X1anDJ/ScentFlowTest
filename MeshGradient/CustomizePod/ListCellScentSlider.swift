@@ -7,9 +7,7 @@
 
 
 import SwiftUI
-
-/// A list-friendly version of ScentControllerSlider for use inside List/Section.
-/// Mirrors layout/behavior but with list-row ergonomics and no external scrolling.
+ 
 struct ListCellScentSlider: View {
     let name: String
     let color: Color
@@ -60,8 +58,7 @@ struct ListCellScentSlider: View {
                 .accessibilityLabel("Remove \(name)")
             }
         }
-        //.padding(.vertical, 6)
-        //.listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+ 
         .listRowBackground(Color.clear)
     }
 }
@@ -92,8 +89,6 @@ struct AddScentListRow: View {
                 .stroke(.white.opacity(0.12), lineWidth: 0.7)
                 .blendMode(.overlay)
         )
-        //.listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-        //.listRowBackground(Color.clear)
         .accessibilityLabel("Add Scent")
     }
 }

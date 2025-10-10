@@ -48,7 +48,6 @@ final class Renderer: NSObject, MTKViewDelegate {
         for i in 0..<6 {
             if intensityAnimStart[i] < t0 { intensityAnimStart[i] += dt } else { intensityAnimStart[i] = now }
             if ghostAnimStart[i]     < t0 { ghostAnimStart[i]     += dt } else { ghostAnimStart[i]     = now }
-            // If you have other per-scent animations (e.g. pulse starts), apply the same pattern:
             // if addPulseStart[i] < t0 { addPulseStart[i] += dt } else { addPulseStart[i] = now }
             // if removePulseStart[i] < t0 { removePulseStart[i] += dt } else { removePulseStart[i] = now }
         }

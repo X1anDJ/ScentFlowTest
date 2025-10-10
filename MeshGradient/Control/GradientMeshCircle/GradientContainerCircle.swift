@@ -219,18 +219,19 @@ struct GradientContainerCircle_Previews: PreviewProvider {
             .preferredColorScheme(.dark)
             
             GradientContainerCircle(
-                colors: [ ],
+                colors: [.cyan, .blue, .purple ],
                 animate: true,
                 isTemplate: false,
                 meshOpacity:1,
                 isOn: true,
                 onToggle: {}
             )
-            .padding()
-            .previewDisplayName("Dark - Animation Off, power on")
+            .padding(60)
+            .previewDisplayName("Dark - Animation on, power on")
             .preferredColorScheme(.dark)
         }
         .previewLayout(.sizeThatFits)
+        .ignoresSafeArea()
         
     }
 }

@@ -118,7 +118,7 @@ struct MixingScreen: View {
                             Text("Order Scent").fontWeight(.semibold)
                         }
                     }
-                    .buttonStyle(.glass)    // unchanged per your note
+                    .buttonStyle(.glass)
                     .controlSize(.large)
                     .disabled(activeColors < 2)
                     .opacity(activeColors < 2 ? 0.5 : 1.0)
@@ -132,10 +132,10 @@ struct MixingScreen: View {
                 selectedCategory: $selectedCategory,
                 selectedNames: Array(scentNames.prefix(activeColors)),
                 onSelect: { color, name in
-                    addScentFromCategory(color: color, name: name)   // existing behavior
+                    addScentFromCategory(color: color, name: name)
                 },
                 onDeselect: { name in
-                    removeScent(named: name)                         // NEW: reuse existing logic
+                    removeScent(named: name)
                 }
             )
             .modifier(CustomSheetDetents())
