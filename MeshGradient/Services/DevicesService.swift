@@ -4,10 +4,6 @@
 //
 //  Created by Dajun Xian on 10/10/25.
 //
-
-
-//
-//  DevicesService.swift
 //  Owns devices in memory, selection, and simple actions.
 //
 
@@ -29,8 +25,8 @@ final class DevicesService: ObservableObject {
     }
 
     /// Loads devices + selection from local storage into memory.
-    func load() {
-        let loaded = local.loadAll()
+    func load() async {
+        let loaded = await local.loadAll()
         devices = loaded.devices
         selectedID = loaded.selectedID ?? devices.first?.id
 
@@ -77,7 +73,11 @@ final class DevicesService: ObservableObject {
 
     /// Writes devices + selection to local storage.
     private func persist() {
-        local.saveAll(devices: devices, selectedID: selectedID)
+        let snapshotDevices = devices
+        let snapshotSelected = selectedID
+        Task.detached(priority: .utility) {
+            await self.local.saveAll(devices: snapshotDevices, selectedID: snapshotSelected)
+        }
     }
 
     /// Seeds two mock devices for first launch.

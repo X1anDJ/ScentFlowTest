@@ -34,8 +34,8 @@ final class AppModel: ObservableObject {
         self.syncEngine = syncEngine
 
         // Load local cache immediately
-        templatesService.load()
-        devicesService.load()
+        Task { await templatesService.load() }
+        Task { await devicesService.load() }
 
         // Start/stop sync based on session state (safe no-op for now)
         sessionService.$state

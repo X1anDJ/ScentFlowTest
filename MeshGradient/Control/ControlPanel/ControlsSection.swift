@@ -37,8 +37,6 @@ struct ControlsSection: View {
                 }
             ) {
                 VStack(spacing: 16) {
-
-                    // ID-based chips row
                     ScentPodsRow(
                         pods: vm.pods,
                         includedIDs: vm.included,

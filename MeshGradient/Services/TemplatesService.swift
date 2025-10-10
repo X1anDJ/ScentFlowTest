@@ -20,25 +20,36 @@ final class TemplatesService: ObservableObject {
     // Key for persisting active selection
     private let activeKey = "templates_active_id_v1"
 
-    init(local: TemplatesRepository) {
-        self.local = local
-        // Restore active selection eagerly (fast, tiny read)
-        if let s = UserDefaults.standard.string(forKey: activeKey) {
-            activeTemplateID = UUID(uuidString: s)
+    // MARK: - Init (Load Path UX)
+    init(local: TemplatesRepository? = nil) {
+        self.local = local ?? LocalTemplatesRepository()
+
+        // Load templates + restore active id asynchronously.
+        // The repository handles background work; we hop back to the main actor to publish.
+        let repo = self.local
+        Task {
+            let loaded = await repo.loadAll()
+            await MainActor.run {
+                self.templates = loaded
+
+                if let s = UserDefaults.standard.string(forKey: self.activeKey),
+                   let restored = UUID(uuidString: s) {
+                    self.activeTemplateID = restored
+                } else {
+                    self.activeTemplateID = loaded.first?.id
+                }
+            }
         }
     }
 
     /// Loads templates from local storage into memory (off the main thread).
-    func load() {
-        Task {
-            let list = await Task.detached(priority: .utility) { await self.local.loadAll() }.value
-            // back on main actor:
-            self.templates = list
-            if let id = self.activeTemplateID,
-               list.first(where: { $0.id == id }) == nil {
-                self.activeTemplateID = nil
-                self.persistActiveID()
-            }
+    func load() async {
+        let list = await local.loadAll()
+        self.templates = list
+        if let id = self.activeTemplateID,
+           list.first(where: { $0.id == id }) == nil {
+            self.activeTemplateID = nil
+            self.persistActiveID()
         }
     }
 
@@ -82,8 +93,9 @@ final class TemplatesService: ObservableObject {
 
     private func persistTemplates() {
         let snapshot = templates
-        Task.detached(priority: .utility) {
-            await self.local.saveAll(snapshot)
+        let repo = local  // capture dependency explicitly to avoid capturing self in the Task closure
+        Task {
+            await repo.saveAll(snapshot) // suspends on main; repo does its own background work
         }
     }
 

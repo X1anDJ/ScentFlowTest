@@ -7,23 +7,26 @@
 
 import Foundation
 
+
 protocol TemplatesRepository {
-    /// Returns all templates from local storage.
-    func loadAll() -> [ScentsTemplate]
-    /// Persists the entire templates array atomically.
-    func saveAll(_ templates: [ScentsTemplate])
+    func loadAll() async -> [ScentsTemplate]
+    func saveAll(_ templates: [ScentsTemplate]) async
 }
 
 struct LocalTemplatesRepository: TemplatesRepository {
-    private let key = "templates_v2"        // versioned key (safe to evolve)
+    private let key = "templates"
 
-    func loadAll() -> [ScentsTemplate] {
-        guard let data = UserDefaults.standard.data(forKey: key) else { return [] }
-        return (try? JSONDecoder().decode([ScentsTemplate].self, from: data)) ?? []
+    func loadAll() async -> [ScentsTemplate] {
+        await Task.detached(priority: .utility) {
+            guard let data = UserDefaults.standard.data(forKey: key) else { return [] }
+            return (try? JSONDecoder().decode([ScentsTemplate].self, from: data)) ?? []
+        }.value
     }
 
-    func saveAll(_ templates: [ScentsTemplate]) {
-        let data = try? JSONEncoder().encode(templates)
-        UserDefaults.standard.set(data, forKey: key)
+    func saveAll(_ templates: [ScentsTemplate]) async {
+        await Task.detached(priority: .utility) {
+            let data = try? JSONEncoder().encode(templates)
+            UserDefaults.standard.set(data, forKey: key)
+        }.value
     }
 }

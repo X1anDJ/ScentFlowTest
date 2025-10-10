@@ -205,3 +205,22 @@ extension GradientWheelViewModel {
         setFanSpeed(s.fanSpeed)
     }
 }
+
+extension GradientWheelViewModel {
+    /// Emits a debounced, deduplicated snapshot of user-facing settings
+    /// whenever isPowerOn / fanSpeed / included / opacities / focusedPodID change.
+    var settingsPublisher: AnyPublisher<WheelSettings, Never> {
+        // Turn each published property into a Void signal upon change (skip initial)
+        let p1 = $isPowerOn.dropFirst().map { _ in () }.eraseToAnyPublisher()
+        let p2 = $fanSpeed.dropFirst().map { _ in () }.eraseToAnyPublisher()
+        let p3 = $included.dropFirst().map { _ in () }.eraseToAnyPublisher()
+        let p4 = $opacities.dropFirst().map { _ in () }.eraseToAnyPublisher()
+        let p5 = $focusedPodID.dropFirst().map { _ in () }.eraseToAnyPublisher()
+
+        return Publishers.MergeMany(p1, p2, p3, p4, p5)
+            .debounce(for: .milliseconds(150), scheduler: RunLoop.main)
+            .map { [unowned self] in self.exportSettings() }
+            .removeDuplicates() // WheelSettings: Equatable
+            .eraseToAnyPublisher()
+    }
+}
