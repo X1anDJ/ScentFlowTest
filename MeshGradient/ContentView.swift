@@ -1,14 +1,20 @@
+//
+//  ContentView.swift
+//  Top-level tabs. Reads the shared AppModel from the environment instead of
+//  creating view-scoped stores. Keeps your existing tab structure.
+//
+
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var devices = DevicesStore()
-    @StateObject private var templatesStore = TemplatesStore()
+    @EnvironmentObject private var app: AppModel     //   read the shared model
 
     var body: some View {
         TabView {
             Tab("Control", systemImage: "circle.hexagonpath.fill") {
                 NavigationStack {
-                    ControlPage(devices: devices, templatesStore: templatesStore)
+                    // ControlPage now reads AppModel from the environment (no params)
+                    ControlPage()
                         .customTopBar("ScentsFlow")
                 }
             }
@@ -33,5 +39,8 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView().preferredColorScheme(.dark)
+    // Previews need the environment object as well
+    ContentView()
+        .environmentObject(AppModel())
+        .preferredColorScheme(.dark)
 }

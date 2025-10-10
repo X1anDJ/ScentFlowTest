@@ -1,11 +1,15 @@
-// ControlPageSegmentPanel.swift — matches ControlsSection & TemplatesSection
+//
+//  ControlPageSegmentPanel.swift
+//  Bottom panel that toggles between Controls and Templates sections.
+//  Reads state from services (TemplatesService, DevicesService) instead of old Stores.
+//
 
 import SwiftUI
 
 struct ControlPageSegmentPanel: View {
     @ObservedObject var vm: GradientWheelViewModel
-    @ObservedObject var templatesStore: TemplatesStore
-    @ObservedObject var devicesStore: DevicesStore
+    @ObservedObject var templatesService: TemplatesService
+    @ObservedObject var devicesService: DevicesService
 
     @Binding var segment: ControlPage.Segment
     @Binding var controlsExpanded: Bool
@@ -13,6 +17,9 @@ struct ControlPageSegmentPanel: View {
     let collapsedHeight: CGFloat
 
     private var shouldAutoSize: Bool { segment == .controls && controlsExpanded }
+    private var currentDevice: Device? {
+        devicesService.selected ?? devicesService.devices.first
+    }
 
     var body: some View {
         ZStack {
@@ -30,11 +37,21 @@ struct ControlPageSegmentPanel: View {
                         ControlsSection(vm: vm, onExpansionChange: { controlsExpanded = $0 })
 
                     case .templates:
-                        TemplatesSection(
-                            store: templatesStore,
-                            vm: vm,
-                            device: devicesStore.device
-                        )
+                        if let device = currentDevice {
+                            TemplatesSection(
+                                templatesService: templatesService,
+                                vm: vm,
+                                device: device
+                            )
+                        } else {
+                            VStack(spacing: 12) {
+                                Image(systemName: "macmini")
+                                Text("No devices available")
+                                    .font(.headline)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 180)
+                        }
                     }
                 }
                 .id(segment)

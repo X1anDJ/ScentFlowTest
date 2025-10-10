@@ -3,8 +3,7 @@
 import SwiftUI
 
 struct TemplatesSection: View {
-    // Use the new model + stores
-    @ObservedObject var store: TemplatesStore
+    @ObservedObject var templatesService: TemplatesService
     @ObservedObject var vm: GradientWheelViewModel
     let device: Device
 
@@ -14,13 +13,13 @@ struct TemplatesSection: View {
     var body: some View {
         VStack(spacing: 12) {
 
-            if store.templates.isEmpty {
+            if templatesService.templates.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 14) {
                         SaveTemplateCard(
                             title: "Save"
                         ) {
-                            newTemplateName = "Mix \(store.templates.count + 1)"
+                            newTemplateName = "Mix \(templatesService.templates.count + 1)"
                             showingNameAlert = true
                         }
                     }
@@ -28,16 +27,15 @@ struct TemplatesSection: View {
             } else {
                 TemplatesGallery(
                     device: device,
-                    templates: store.templates,
+                    templates: templatesService.templates,
                     onTapTemplate: { t in
                         // Apply to wheel (intersects with device pods and rebuilds)
                         vm.applyTemplate(t, on: device)
-                        // Optionally: also persist as active if you track it in settings/store
-                        store.activeTemplateID = t.id
-                        store.persist()
+                        // Persist as active via the store API
+                        templatesService.setActiveTemplateID(t.id)
                     },
                     onDeleteTemplate: { t in
-                        store.remove(id: t.id)
+                        templatesService.remove(id: t.id)
                     }
                 )
             }
@@ -47,7 +45,7 @@ struct TemplatesSection: View {
             HStack {
                 Spacer()
                 Button {
-                    newTemplateName = "Mix \(store.templates.count + 1)"
+                    newTemplateName = "Mix \(templatesService.templates.count + 1)"
                     showingNameAlert = true
                 } label: {
                     Label("Save", systemImage: "plus.circle.fill").labelStyle(.titleAndIcon)
@@ -84,8 +82,7 @@ struct TemplatesSection: View {
         guard !orderedIncluded.isEmpty else { return }
 
         let new = ScentsTemplate(name: name, scentPodIDs: Array(orderedIncluded))
-        store.add(new)
-        store.activeTemplateID = new.id
-        store.persist()
+        templatesService.add(new)                     // persists
+//        templatesService.setActiveTemplateID(new.id)  // publishes + persists
     }
 }

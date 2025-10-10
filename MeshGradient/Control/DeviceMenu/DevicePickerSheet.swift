@@ -4,7 +4,7 @@ import SwiftUI
 
 /// Simple picker to switch between devices (current + mock).
 struct DevicePickerSheet: View {
-    @ObservedObject var store: DevicesStore
+    @ObservedObject var devicesService: DevicesService
     let onSelected: (Device) -> Void   // <- changed from DeviceProfile
 
     @Environment(\.dismiss) private var dismiss
@@ -12,9 +12,9 @@ struct DevicePickerSheet: View {
     var body: some View {
         NavigationStack {
             List {
-                ForEach(store.devices) { device in
+                ForEach(devicesService.devices) { device in
                     Button {
-                        store.select(device.id)
+                        devicesService.select(device.id)
                         onSelected(device)
                         dismiss()
                     } label: {
@@ -26,7 +26,7 @@ struct DevicePickerSheet: View {
                                     .foregroundStyle(.secondary)
                             }
                             Spacer()
-                            if store.selectedID == device.id {
+                            if devicesService.selectedID == device.id {
                                 Image(systemName: "checkmark")
                                     .font(.callout.weight(.semibold))
                             }

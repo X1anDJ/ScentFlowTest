@@ -3,14 +3,14 @@
 import SwiftUI
 
 struct DeviceMenuBar: View {
-    @ObservedObject var devices: DevicesStore
+    @ObservedObject var devicesService: DevicesService
     @Binding var showScanner: Bool
     var onSelect: (Device) -> Void   // <- changed from DeviceProfile
 
     var body: some View {
         Menu {
             Section("My Devices") {
-                ForEach(devices.devices) { device in
+                ForEach(devicesService.devices) { device in
                     Button {
                         onSelect(device)
                     } label: {
@@ -32,7 +32,7 @@ struct DeviceMenuBar: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "macmini.fill")
-                Text(devices.selected?.name ?? "No device")
+                Text(devicesService.selected?.name ?? "No device")
                     .lineLimit(1)
                     .truncationMode(.tail)
                 Spacer()

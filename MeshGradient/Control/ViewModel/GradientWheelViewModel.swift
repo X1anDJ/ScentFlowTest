@@ -82,7 +82,6 @@ final class GradientWheelViewModel: ObservableObject {
         }
     }
 
-    /// 👇 NEW: tiny helpers so your ControlsSection compiles without changes
     func togglePower() { setPower(!isPowerOn) }
     func setFanSpeed(_ v: Double) { fanSpeed = max(0, min(1, v)) }
 
@@ -179,6 +178,15 @@ final class GradientWheelViewModel: ObservableObject {
             wheelOpacity = 1.0
             scheduleWheelRebuild()
         }
+    }
+}
+
+
+extension GradientWheelViewModel {
+    struct WheelSettings: Codable, Equatable {
+        var isPowerOn: Bool
+        var fanSpeed: Double
+        var wheel: WheelSnapshot
     }
 }
 

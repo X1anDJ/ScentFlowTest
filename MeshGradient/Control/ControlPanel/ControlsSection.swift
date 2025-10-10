@@ -58,7 +58,6 @@ struct ControlsSection: View {
                                 .accessibilityLabel("No scents added. Tap a pod to add a scent.")
                         } else if let fid = vm.focusedPodID,
                                   let pod = vm.pods.first(where: { $0.id == fid }) {
-                            // ✅ FIX: ScentControllerStepper takes (focused:value:)
                             let binding = Binding<Double>(
                                 get: { vm.opacities[fid] ?? 0 },
                                 set: { vm.setOpacity($0, for: fid) }
