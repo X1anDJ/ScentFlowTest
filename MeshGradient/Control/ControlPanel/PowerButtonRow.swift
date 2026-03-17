@@ -65,8 +65,8 @@ private struct GuidedPowerButton: View {
     @State private var revealTask: Task<Void, Never>? = nil
 
     private let shape = Capsule()
-    private let buttonWidth: CGFloat = 60
-    private let buttonHeight: CGFloat = 44
+    private let buttonWidth: CGFloat = 56
+    private let buttonHeight: CGFloat = 40
 
     var body: some View {
         Button(action: action) {

@@ -83,17 +83,20 @@ final class DevicesService: ObservableObject {
     /// Seeds two mock devices for first launch.
     private func seedMockIfNeeded() {
         guard devices.isEmpty else { return }
+
         let pods: [ScentPod] = [
-            ScentPod(name: "Pepper",     color: .red,    remainTime:  90*60),
-            ScentPod(name: "Orange",     color: .orange, remainTime: 120*60),
-            ScentPod(name: "Lemon",      color: .yellow, remainTime:  80*60),
-            ScentPod(name: "Mint",       color: .green,  remainTime: 110*60),
-            ScentPod(name: "Ocean",      color: .cyan,   remainTime: 100*60),
-            ScentPod(name: "Bluebell",   color: .blue,   remainTime:  95*60),
-            ScentPod(name: "Sandalwood", color: .purple, remainTime: 130*60),
+            ScentPod(name: "Pepper",     color: .red,    level: .normal),
+            ScentPod(name: "Orange",     color: .orange, level: .low),
+            ScentPod(name: "Lemon",      color: .yellow, level: .normal),
+            ScentPod(name: "Mint",       color: .green,  level: .empty),
+            ScentPod(name: "Ocean",      color: .cyan,   level: .normal),
+            ScentPod(name: "Bluebell",   color: .blue,   level: .low),
+            ScentPod(name: "Sandalwood", color: .purple, level: .normal),
         ]
+
         let a = Device(name: "Living Room", insertedPods: pods, isMock: true)
         let b = Device(name: "Bedroom", insertedPods: pods, isMock: true)
+
         devices = [a, b]
         selectedID = a.id
     }

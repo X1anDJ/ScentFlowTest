@@ -1,77 +1,100 @@
 //
-//  ControlPage.swift — per-device control UI hooked to AppModel/services.
-//  - Reads devices/templates via @EnvironmentObject AppModel
-//  - Loads a device’s saved wheel settings blob (if any) into the VM on appear/select
-//  - Saves wheel changes back to the selected device (encoded as Data) on change
-//  - Passes services to your panel views (update their signatures accordingly)
+//  ControlPage.swift
 //
 
 import SwiftUI
 
 struct ControlPage: View {
 
-    // MARK: - Tunables
     private enum UI {
-        static let wheelPadding: CGFloat    = 80
-        static let baseVPadding: CGFloat    = 24
-        static let expandedScale: CGFloat   = 0.85
-        static let collapsedScale: CGFloat  = 1.00
-        static let cardHPad: CGFloat        = 16
-        static let cardBottomPad: CGFloat   = 16
+        static let wheelPadding: CGFloat = 80
+        static let baseVPadding: CGFloat = 24
+        static let expandedScale: CGFloat = 0.85
+        static let collapsedScale: CGFloat = 1.00
+        static let cardHPad: CGFloat = 16
+        static let cardBottomPad: CGFloat = 16
         static let collapsedCardHeight: CGFloat = 318
     }
 
-    // MARK: - Environment (new architecture)
     @EnvironmentObject private var app: AppModel
 
-    // MARK: - View Model
     @StateObject private var vm = GradientWheelViewModel()
 
-    // MARK: - UI State
     @State private var showScanner = false
     @State private var controlsExpanded = false
+    @State private var didInitialLoad = false
+    @State private var isHydratingVM = false
 
     enum Segment: Int, Hashable { case controls = 0, templates = 1 }
     @State private var segment: Segment = .controls
 
-    private var wheelScale: CGFloat { controlsExpanded ? UI.expandedScale : UI.collapsedScale }
+    private var wheelScale: CGFloat {
+        controlsExpanded ? UI.expandedScale : UI.collapsedScale
+    }
 
-    // Persist per-device (not global): encode VM settings → Data → DevicesService
     private func persist(_ settings: GradientWheelViewModel.WheelSettings) {
         if let data = try? JSONEncoder().encode(settings) {
             app.devicesService.saveSettingsBlobForSelected(data)
         }
     }
 
-    // Apply selected device’s pods + (optional) saved settings into the VM
     private func loadDeviceIntoVM(_ device: Device) {
+        isHydratingVM = true
+
         vm.updateDevicePods(device.insertedPods)
+
         if let blob = device.savedSettingsBlob,
-           let currentDeviceSetting = try? JSONDecoder().decode(GradientWheelViewModel.WheelSettings.self, from: blob) {
-            vm.load(from: currentDeviceSetting)
+           let decoded = try? JSONDecoder().decode(GradientWheelViewModel.WheelSettings.self, from: blob) {
+            vm.load(from: decoded)
         } else {
-            // RESET to clean defaults for this *device*
-            vm.applyTemplate(nil, on: device)     // clears included + focus
-//            vm.setFanSpeed(0.5)                   // or your preferred default
-//            vm.clearAllOpacities()                // <-- add this small VM API (see B)
-            persist(vm.exportSettings())
+            // First-time / no-blob fallback:
+            // build a default state for THIS device, but do not let hydration save loop fire
+            let empty = GradientWheelViewModel.WheelSettings(
+                isPowerOn: false,
+                fanSpeed: 0.5,
+                wheel: .init(
+                    included: [],
+                    opacities: [:],
+                    focusedPodID: nil
+                )
+            )
+            vm.load(from: empty)
+        }
+
+        // Let all @Published updates settle before re-enabling persistence
+        DispatchQueue.main.async {
+            isHydratingVM = false
         }
     }
 
     var body: some View {
         ZStack {
-            // TOP
             VStack(spacing: 12) {
-                DeviceMenuBar(
-                    devicesService: app.devicesService,
-                    showScanner: $showScanner,
-                    onSelect: { device in
-                        app.devicesService.select(device.id)
-                        loadDeviceIntoVM(device)
+                HStack(spacing: 12) {
+                    DeviceMenuBar(
+                        devicesService: app.devicesService,
+                        showScanner: $showScanner,
+                        onSelect: { device in
+                            app.devicesService.select(device.id)
+                            loadDeviceIntoVM(device)
+                        }
+                    )
+                    .frame(maxWidth: .infinity)
+
+                    if let selectedDevice = app.devicesService.selected ?? app.devicesService.devices.first {
+                        NavigationLink {
+                            DeviceInfoPage(device: selectedDevice)
+                        } label: {
+                            Image(systemName: "info.circle")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundStyle(.secondary)
+                                .frame(width: 28, height: 28)
+                        }
+                        .buttonStyle(.plain)
                     }
-                )
+                }
                 .padding(.top, 4)
-                .padding(.leading, 16)
+                .padding(.horizontal, 16)
 
                 GradientContainerCircle(
                     colors: vm.selectedColorsWeighted,
@@ -90,7 +113,6 @@ struct ControlPage: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
-            // BOTTOM PANEL
             VStack {
                 Spacer().frame(minHeight: 30)
 
@@ -108,33 +130,30 @@ struct ControlPage: View {
                 .shadow(radius: 6)
             }
         }
-        .sheet(isPresented: $showScanner) { ScannerSheet() }
-
-        // Persist per-device on changes (debounce if needed inside your services)
-//        .onChange(of: vm.isPowerOn)    { _, _ in saveSnapshot() }
-//        .onChange(of: vm.fanSpeed)     { _, _ in saveSnapshot() }
-//        .onChange(of: vm.included)     { _, _ in saveSnapshot() }
-//        .onChange(of: vm.opacities)    { _, _ in saveSnapshot() }
-//        .onChange(of: vm.focusedPodID) { _, _ in saveSnapshot() }
+        .sheet(isPresented: $showScanner) {
+            ScannerSheet()
+        }
         .onReceive(vm.settingsPublisher) { settings in
+            guard !isHydratingVM else { return }
             persist(settings)
         }
-        // Initial load using .task (cancel-aware).
         .task {
+            guard !didInitialLoad else { return }
+            didInitialLoad = true
+
             await app.templatesService.load()
             await app.devicesService.load()
 
             if let current = app.devicesService.selected ?? app.devicesService.devices.first {
-                app.devicesService.select(current.id)
+                if app.devicesService.selectedID != current.id {
+                    app.devicesService.select(current.id)
+                }
                 loadDeviceIntoVM(current)
             }
         }
-
-        // If selection changes elsewhere, rebuild the VM here.
-        .task(id: app.devicesService.selectedID) {
-            if let current = app.devicesService.selected {
-                loadDeviceIntoVM(current)
-            }
+        .onChange(of: app.devicesService.selectedID) { _, _ in
+            guard let current = app.devicesService.selected else { return }
+            loadDeviceIntoVM(current)
         }
     }
 }
