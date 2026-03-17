@@ -18,7 +18,7 @@ struct ControlPage: View {
         static let collapsedScale: CGFloat  = 1.00
         static let cardHPad: CGFloat        = 16
         static let cardBottomPad: CGFloat   = 16
-        static let collapsedCardHeight: CGFloat = 310
+        static let collapsedCardHeight: CGFloat = 318
     }
 
     // MARK: - Environment (new architecture)

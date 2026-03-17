@@ -34,7 +34,10 @@ struct ControlPageSegmentPanel: View {
                 Group {
                     switch segment {
                     case .controls:
-                        ControlsSection(vm: vm, onExpansionChange: { controlsExpanded = $0 })
+                        ControlsSection(
+                            vm: vm,
+                            isExpanded: $controlsExpanded
+                        )
 
                     case .templates:
                         if let device = currentDevice {

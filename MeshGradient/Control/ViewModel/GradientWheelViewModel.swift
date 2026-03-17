@@ -59,6 +59,9 @@ final class GradientWheelViewModel: ObservableObject {
         self.pods = pods
         orderedPodIDs = pods.map(\.id)
         colorsByPodID = Dictionary(uniqueKeysWithValues: pods.map { ($0.id, $0.color.color) })
+
+        ensureFocusedPodIsValid()
+
         if isPowerOn { scheduleWheelRebuild() }
     }
 
@@ -107,14 +110,19 @@ final class GradientWheelViewModel: ObservableObject {
 
         let insertedIDs = Set(device.insertedPods.map(\.id))
         let ordered = template.scentPodIDs.filter { insertedIDs.contains($0) }.prefix(6)
+
         included = Set(ordered)
-        focusedPodID = ordered.first
+
         var newOpacities = opacities
         for id in ordered where newOpacities[id] == nil {
             newOpacities[id] = AppConfig.maxIntensity * 0.5
         }
         newOpacities = newOpacities.filter { included.contains($0.key) }
         opacities = newOpacities
+
+        focusedPodID = ordered.first
+        ensureFocusedPodIsValid()
+
         if isPowerOn { scheduleWheelRebuild() }
     }
     
@@ -123,7 +131,6 @@ final class GradientWheelViewModel: ObservableObject {
             if focusedPodID == podID {
                 included.remove(podID)
                 opacities[podID] = nil
-                focusedPodID = orderedPodIDs.first(where: { included.contains($0) })
             } else {
                 focusedPodID = podID
             }
@@ -133,6 +140,9 @@ final class GradientWheelViewModel: ObservableObject {
             focusedPodID = podID
             opacities[podID] = opacities[podID] ?? (AppConfig.maxIntensity * 0.5)
         }
+
+        ensureFocusedPodIsValid()
+
         if isPowerOn { scheduleWheelRebuild() }
     }
 
@@ -140,6 +150,22 @@ final class GradientWheelViewModel: ObservableObject {
         let clamped = max(0.0, min(AppConfig.maxIntensity, value))
         opacities[podID] = clamped
         if isPowerOn { scheduleWheelRebuild() }
+    }
+    
+    private func ensureFocusedPodIsValid() {
+        // No included pod -> no focused pod
+        guard !included.isEmpty else {
+            focusedPodID = nil
+            return
+        }
+
+        // Keep current focus if it is still valid
+        if let focusedPodID, included.contains(focusedPodID) {
+            return
+        }
+
+        // Otherwise fallback to the first included pod in device order
+        focusedPodID = orderedPodIDs.first(where: { included.contains($0) })
     }
 
     // MARK: - Debounced rebuild
@@ -178,11 +204,15 @@ final class GradientWheelViewModel: ObservableObject {
     }
 
     func load(from s: WheelSettings) {
-        included    = s.wheel.included
-        opacities   = s.wheel.opacities
+        included = s.wheel.included
+        opacities = s.wheel.opacities
         focusedPodID = s.wheel.focusedPodID
+
+        ensureFocusedPodIsValid()
+
         setPower(s.isPowerOn)
         setFanSpeed(s.fanSpeed)
+
         if !s.isPowerOn || included.isEmpty {
             selectedColorsWeighted = []
             wheelOpacity = s.isPowerOn ? 1.0 : 0.0

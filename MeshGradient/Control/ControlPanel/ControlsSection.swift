@@ -1,141 +1,171 @@
 // ControlsSection.swift  — FIXED call to ScentControllerStepper + ID-centric
 
+//
+//  ControlsSection.swift
+//
+
 import SwiftUI
 
-// MARK: - Controls content (no outer CardContainer)
 struct ControlsSection: View {
     @ObservedObject var vm: GradientWheelViewModel
-    var onExpansionChange: (Bool) -> Void = { _ in }
+    @Binding var isExpanded: Bool
 
     private enum ControlsUI {
-        static let opacityRowHeight: CGFloat = 30   // collapsed row height target
+        static let opacityRowHeight: CGFloat = 34
     }
-
-    // UI
-    @State private var isExpanded = false
 
     var body: some View {
         VStack(spacing: 16) {
 
-            // Parent: Power + Fan
             PowerButtonRow(
                 isOn: vm.isPowerOn,
                 speed: vm.fanSpeed,
-                onToggle: { vm.togglePower() },
+                onToggle: {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
+                        vm.togglePower()
+                    }
+                },
                 onChangeSpeed: { vm.setFanSpeed($0) }
             )
 
-            // Child: Pods
-            ChildCard(
-                title: "Pods",
-                // Make header tappable only if we can actually expand/collapse
-                onHeaderTap: (vm.included.count > 1 ? { toggleExpanded() } : nil),
-                trailing: {
-                    if vm.included.count > 1 {
-                        chevronLabel // decorative; header handles taps
-                    }
-                }
-            ) {
-                VStack(spacing: 16) {
-                    ScentPodsRow(
-                        pods: vm.pods,
-                        includedIDs: vm.included,
-                        focusedID: vm.focusedPodID,
-                        canSelectMore: vm.canSelectMore,
-                        onTap: { vm.toggle($0) }
-                    )
-
-                    if !isExpanded {
-                        if vm.included.isEmpty {
-                            // Placeholder keeps the card’s folded height stable
-                            Text("No active pods. Tap a pod to add.")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .frame(minHeight: ControlsUI.opacityRowHeight, alignment: .center)
-                                .accessibilityLabel("No scents added. Tap a pod to add a scent.")
-                        } else if let fid = vm.focusedPodID,
-                                  let pod = vm.pods.first(where: { $0.id == fid }) {
-                            let binding = Binding<Double>(
-                                get: { vm.opacities[fid] ?? 0 },
-                                set: { vm.setOpacity($0, for: fid) }
-                            )
-                            ScentControllerStepper(
-                                focused: pod,
-                                value: binding
-                            )
-                            .frame(minHeight: ControlsUI.opacityRowHeight, alignment: .center)
-                        } else {
-                            // Keep folded height stable even if focused is nil
-                            Spacer()
-                                .frame(minHeight: ControlsUI.opacityRowHeight)
+            ZStack {
+                ChildCard(
+                    title: "Pods",
+                    onHeaderTap: (
+                        vm.isPowerOn && vm.pods.count > 1
+                        ? { toggleExpanded() }
+                        : nil
+                    ),
+                    trailing: {
+                        if vm.pods.count > 1 {
+                            chevronLabel
                         }
                     }
+                ) {
+                    VStack(spacing: 16) {
 
-                    // Expanded: per-scent rows with sliders
-                    if isExpanded {
-                        if vm.included.count > 1 {
+                        if !isExpanded {
+                            ScentPodsRow(
+                                pods: vm.pods,
+                                includedIDs: vm.included,
+                                focusedID: vm.focusedPodID,
+                                canSelectMore: vm.canSelectMore,
+                                onTap: { vm.toggle($0) }
+                            )
+                        }
+
+                        if !isExpanded {
+                            if vm.included.isEmpty {
+                                Text("No active pods. Tap a pod to add.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                    .frame(minHeight: ControlsUI.opacityRowHeight, alignment: .center)
+                                    .accessibilityLabel("No scents added. Tap a pod to add a scent.")
+                            } else if let fid = vm.focusedPodID,
+                                      let pod = vm.pods.first(where: { $0.id == fid }) {
+                                ScentControllerStepper(
+                                    focused: pod,
+                                    value: bindingForCollapsedStepper(podID: fid)
+                                )
+                                .frame(minHeight: ControlsUI.opacityRowHeight, alignment: .center)
+                            } else {
+                                Spacer()
+                                    .frame(minHeight: ControlsUI.opacityRowHeight)
+                            }
+                        }
+
+                        if isExpanded {
                             VStack(spacing: 10) {
-                                ForEach(vm.pods.filter { vm.included.contains($0.id) }, id: \.id) { pod in
-                                    let displayed = displayed(from: vm.opacities[pod.id] ?? 0)
+                                ForEach(vm.pods, id: \.id) { pod in
+                                    let isIncluded = vm.included.contains(pod.id)
+                                    let displayed = displayedValue(for: pod.id)
+
                                     ScentControllerSlider(
                                         name: pod.name,
-                                        color: pod.color.color,
+                                        color: isIncluded ? pod.color.color : .secondary.opacity(0.35),
                                         displayed: displayed,
                                         onChangeDisplayed: { newDisplayed in
-                                            let applied = newDisplayed * AppConfig.maxIntensity
-                                            vm.setOpacity(applied, for: pod.id)
+                                            applyExpandedSliderChange(newDisplayed, for: pod.id)
                                         },
-                                        onFocusOrToggle: { vm.toggle(pod.id) }
+                                        onFocusOrToggle: nil,
+                                        onRemove: nil,
+                                        showsPercentage: true,
+                                        isDimmed: !isIncluded
                                     )
                                 }
                             }
-                        } else {
-                            // Header will immediately collapse via onChange; tiny guard
-                            Spacer()
-                                .frame(height: ControlsUI.opacityRowHeight)
-                                .accessibilityHidden(true)
                         }
                     }
                 }
+                .disabled(!vm.isPowerOn)
+                .opacity(vm.isPowerOn ? 1.0 : 0.45)
+                .animation(.easeInOut(duration: 0.2), value: vm.isPowerOn)
             }
         }
         .padding(.bottom, 16)
-        .onAppear {
-            // Ensure parent knows the initial state
-            onExpansionChange(isExpanded)
+        .onChange(of: vm.isPowerOn) { _, isOn in
+            if !isOn && isExpanded {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
+                    isExpanded = false
+                }
+            }
         }
-        // Auto-collapse when pods drop to 1 or 0 while expanded
         .onChange(of: vm.included.count) { newCount in
             guard isExpanded, newCount <= 1 else { return }
             withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
                 isExpanded = false
-                onExpansionChange(false)
             }
         }
     }
 
-    // MARK: - Header chevron (decorative)
     private var chevronLabel: some View {
-        Label(isExpanded ? "Collapse" : "Expand",
-              systemImage: isExpanded ? "chevron.up" : "chevron.down")
-            .labelStyle(.iconOnly)
-            .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle(.secondary)
-            .accessibilityHidden(true) // header is the a11y button
+        Label(
+            isExpanded ? "Collapse" : "Expand",
+            systemImage: isExpanded ? "chevron.up" : "chevron.down"
+        )
+        .labelStyle(.iconOnly)
+        .font(.system(size: 14, weight: .semibold))
+        .foregroundStyle(.secondary)
+        .accessibilityHidden(true)
     }
 
-    // MARK: - Toggle helper
     private func toggleExpanded() {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
             isExpanded.toggle()
-            onExpansionChange(isExpanded)
         }
     }
 
-    private func displayed(from effective: Double) -> Double {
-        // Convert stored effective (0...maxIntensity) to slider percent (0...1)
+    private func bindingForCollapsedStepper(podID: UUID) -> Binding<Double> {
+        Binding<Double>(
+            get: { vm.opacities[podID] ?? 0 },
+            set: { vm.setOpacity($0, for: podID) }
+        )
+    }
+
+    private func displayedValue(for podID: UUID) -> Double {
+        let effective = vm.opacities[podID] ?? 0
         let maxI = max(0.0001, AppConfig.maxIntensity)
         return min(1.0, max(0.0, effective / maxI))
+    }
+
+    private func applyExpandedSliderChange(_ displayed: Double, for podID: UUID) {
+        let effective = max(0, min(1, displayed)) * AppConfig.maxIntensity
+        let wasIncluded = vm.included.contains(podID)
+
+        if effective <= 0.0001 {
+            if wasIncluded {
+                vm.toggle(podID)
+            } else {
+                vm.setOpacity(0, for: podID)
+            }
+            return
+        }
+
+        if !wasIncluded {
+            vm.toggle(podID)
+        }
+
+        vm.setOpacity(effective, for: podID)
     }
 }

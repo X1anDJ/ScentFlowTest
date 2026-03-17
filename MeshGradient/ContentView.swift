@@ -28,9 +28,7 @@ struct ContentView: View {
 
             Tab("User", systemImage: "person.fill") {
                 NavigationStack {
-                    Text("More coming soon")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .customTopBar("User")
+                    UserPage()
                 }
             }
         }
