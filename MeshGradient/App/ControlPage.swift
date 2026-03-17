@@ -45,16 +45,16 @@ struct ControlPage: View {
 
     // Apply selected device’s pods + (optional) saved settings into the VM
     private func loadDeviceIntoVM(_ device: Device) {
-        // 1) pods drive colors/order
         vm.updateDevicePods(device.insertedPods)
-
-        // 2) load saved settings, else set a sensible default
         if let blob = device.savedSettingsBlob,
-           let saved = try? JSONDecoder().decode(GradientWheelViewModel.WheelSettings.self, from: blob) {
-            vm.load(from: saved)
+           let currentDeviceSetting = try? JSONDecoder().decode(GradientWheelViewModel.WheelSettings.self, from: blob) {
+            vm.load(from: currentDeviceSetting)
         } else {
-            vm.setPower(true)
-            // optional: vm.applyTemplate(nil, on: device)
+            // RESET to clean defaults for this *device*
+            vm.applyTemplate(nil, on: device)     // clears included + focus
+//            vm.setFanSpeed(0.5)                   // or your preferred default
+//            vm.clearAllOpacities()                // <-- add this small VM API (see B)
+            persist(vm.exportSettings())
         }
     }
 

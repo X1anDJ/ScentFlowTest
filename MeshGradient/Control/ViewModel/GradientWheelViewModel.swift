@@ -33,7 +33,7 @@ final class GradientWheelViewModel: ObservableObject {
     @Published private(set) var pods: [ScentPod] = []
 
     /// Power state the UI binds to
-    @Published private(set) var isPowerOn: Bool = true
+    @Published private(set) var isPowerOn: Bool = false
     @Published var wheelOpacity: Double = 1.0
 
     @Published var fanSpeed: Double = 0.5
@@ -86,11 +86,25 @@ final class GradientWheelViewModel: ObservableObject {
     func setFanSpeed(_ v: Double) { fanSpeed = max(0, min(1, v)) }
 
     func applyTemplate(_ template: ScentsTemplate?, on device: Device) {
+        
+        // If no current settings (initial state), make everything default.
         guard let template else {
-            included = []; focusedPodID = nil
-            if isPowerOn { scheduleWheelRebuild() }
+            // Reset VM to default, powered-off, empty state
+            rebuildTask?.cancel()
+            clearTask?.cancel()
+
+            included = []
+            opacities = [:]
+            focusedPodID = nil
+
+            fanSpeed = 0.5
+            isPowerOn = false
+            wheelOpacity = 0.0
+            selectedColorsWeighted = []
+
             return
         }
+
         let insertedIDs = Set(device.insertedPods.map(\.id))
         let ordered = template.scentPodIDs.filter { insertedIDs.contains($0) }.prefix(6)
         included = Set(ordered)
@@ -103,7 +117,7 @@ final class GradientWheelViewModel: ObservableObject {
         opacities = newOpacities
         if isPowerOn { scheduleWheelRebuild() }
     }
-
+    
     func toggle(_ podID: UUID) {
         if included.contains(podID) {
             if focusedPodID == podID {
@@ -163,15 +177,15 @@ final class GradientWheelViewModel: ObservableObject {
         WheelSnapshot(included: included, opacities: opacities, focusedPodID: focusedPodID)
     }
 
-    func load(from s: WheelSnapshot, powerOn: Bool) {
-        included    = s.included
-        opacities   = s.opacities
-        focusedPodID = s.focusedPodID
-        setPower(powerOn)
-
-        if !powerOn || included.isEmpty {
+    func load(from s: WheelSettings) {
+        included    = s.wheel.included
+        opacities   = s.wheel.opacities
+        focusedPodID = s.wheel.focusedPodID
+        setPower(s.isPowerOn)
+        setFanSpeed(s.fanSpeed)
+        if !s.isPowerOn || included.isEmpty {
             selectedColorsWeighted = []
-            wheelOpacity = powerOn ? 1.0 : 0.0
+            wheelOpacity = s.isPowerOn ? 1.0 : 0.0
             rebuildTask?.cancel()
             clearTask?.cancel()
         } else {
@@ -198,12 +212,6 @@ extension GradientWheelViewModel {
                       wheel: snapshot())
     }
 
-    func load(from s: WheelSettings) {
-        // load wheel sub-state
-        load(from: s.wheel, powerOn: s.isPowerOn)
-        // fan
-        setFanSpeed(s.fanSpeed)
-    }
 }
 
 extension GradientWheelViewModel {
@@ -218,7 +226,7 @@ extension GradientWheelViewModel {
         let p5 = $focusedPodID.dropFirst().map { _ in () }.eraseToAnyPublisher()
 
         return Publishers.MergeMany(p1, p2, p3, p4, p5)
-            .debounce(for: .milliseconds(150), scheduler: RunLoop.main)
+            //.debounce(for: .milliseconds(150), scheduler: RunLoop.main)
             .map { [unowned self] in self.exportSettings() }
             .removeDuplicates() // WheelSettings: Equatable
             .eraseToAnyPublisher()

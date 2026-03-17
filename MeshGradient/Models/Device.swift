@@ -4,11 +4,7 @@
 //
 //  Created by Dajun Xian on 10/10/25.
 //
-
-
-//
-//  Device.swift
-//  Domain model for a diffuser device. Minimal & UI-friendly.
+//  Domain model for a diffuser device
 //
 
 import Foundation
@@ -16,10 +12,10 @@ import Foundation
 struct Device: Identifiable, Codable, Equatable {
     let id: UUID
     var name: String
-    var insertedPods: [ScentPod]       // assumes your existing ScentPod model
+    var insertedPods: [ScentPod]
     var isMock: Bool
-    var savedSettingsBlob: Data?       // opaque wheel/settings snapshot (future-proof)
-
+    var savedSettingsBlob: Data?
+    
     init(
         id: UUID = .init(),
         name: String,
