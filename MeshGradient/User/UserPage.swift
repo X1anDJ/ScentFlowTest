@@ -2,14 +2,6 @@
 //  UserPage.swift
 //  MeshGradient
 //
-//  Created by Dajun Xian on 3/17/26.
-//
-
-
-//
-//  UserPage.swift
-//  MeshGradient
-//
 
 import SwiftUI
 
@@ -36,40 +28,17 @@ struct UserPage: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 28) {
                 profileSection
-
-                DividerSectionSpacer()
-
                 statsSection
-
-                DividerSectionSpacer()
-
                 purchasedProductsSection
-
-                DividerSectionSpacer(top: 28)
-
                 recordsSection
-
-                DividerSectionSpacer(top: 28)
-
-                simpleSection(
-                    title: "Community Interaction",
-                    items: communityItems
-                )
-
-                DividerSectionSpacer(top: 28)
-
-                simpleSection(
-                    title: "Account Settings",
-                    items: settingItems
-                )
-
-                Spacer(minLength: 32)
+                simpleSection(title: "Community Interaction", items: communityItems)
+                simpleSection(title: "Account Settings", items: settingItems)
             }
-            .padding(.horizontal, 14)
-            .padding(.top, 12)
-            .padding(.bottom, 24)
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 28)
         }
         .background(Color.black.ignoresSafeArea())
     }
@@ -80,79 +49,83 @@ private extension UserPage {
     var profileSection: some View {
         VStack(spacing: 14) {
             Circle()
-                .fill(Color.white.opacity(0.18))
-                .frame(width: 96, height: 96)
-                .padding(.top, 18)
+                .fill(Color.white.opacity(0.12))
+                .frame(width: 92, height: 92)
+                .overlay {
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 34, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.9))
+                }
+                .padding(.top, 8)
 
             Text(profile.name)
-                .font(.system(size: 24, weight: .bold))
-                .foregroundStyle(.white)
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(.primary)
 
-            Text("ID: \(profile.id) | Member Level: \(profile.memberLevel)")
-                .font(.system(size: 16))
-                .foregroundStyle(.white.opacity(0.6))
+            Text("ID: \(profile.id) · \(profile.memberLevel) Member")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.bottom, 22)
+        .padding(.top, 4)
     }
 
     var statsSection: some View {
-        HStack(spacing: 0) {
-            ForEach(productStats) { item in
-                UserStatCell(item: item)
+        VStack(alignment: .leading, spacing: 14) {
+            SectionHeader(title: "Overview")
 
-                if item.id != productStats.last?.id {
-                    Spacer(minLength: 0)
+            HStack(spacing: 12) {
+                ForEach(productStats) { item in
+                    UserStatCell(item: item)
                 }
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 24)
     }
 
     var purchasedProductsSection: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 16) {
             SectionHeader(title: "Purchased Products")
 
             productTabSelector
 
-            VStack(spacing: 14) {
+            VStack(spacing: 12) {
                 ForEach(filteredProducts) { item in
                     PurchasedProductCard(item: item)
                 }
             }
         }
-        .padding(.top, 22)
     }
 
     var recordsSection: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 16) {
             SectionHeader(title: "My Records")
 
-            VStack(spacing: 1) {
+            GroupCard(spacing: 1) {
                 ForEach(recordItems) { item in
                     RecordRow(item: item)
                 }
             }
-            .background(Color.white.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: 0))
         }
     }
 
     var productTabSelector: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             ForEach(ProductTab.allCases, id: \.self) { tab in
                 Button {
-                    selectedProductTab = tab
+                    withAnimation(.easeInOut(duration: 0.18)) {
+                        selectedProductTab = tab
+                    }
                 } label: {
                     Text(tab.title)
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(selectedProductTab == tab ? .white : .white.opacity(0.9))
-                        .padding(.horizontal, 18)
-                        .padding(.vertical, 9)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(selectedProductTab == tab ? .primary : .secondary)
+                        .padding(.horizontal, 16)
+                        .frame(height: 34)
                         .background(
                             Capsule()
-                                .fill(selectedProductTab == tab ? Color.blue : Color.white.opacity(0.12))
+                                .fill(selectedProductTab == tab
+                                      ? Color.white.opacity(0.16)
+                                      : Color.white.opacity(0.06))
                         )
                 }
                 .buttonStyle(.plain)
@@ -163,44 +136,45 @@ private extension UserPage {
     }
 
     func simpleSection(title: String, items: [MockSimpleMenuItem]) -> some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 16) {
             SectionHeader(title: title)
 
-            VStack(spacing: 1) {
+            GroupCard(spacing: 1) {
                 ForEach(items) { item in
                     SimpleMenuRow(item: item)
                 }
             }
-            .background(Color.white.opacity(0.08))
         }
     }
 }
 
-// MARK: - Components
-private struct DividerSectionSpacer: View {
-    var top: CGFloat = 0
-
-    var body: some View {
-        Rectangle()
-            .fill(Color.white.opacity(0.1))
-            .frame(height: 1)
-            .padding(.top, top)
-    }
-}
-
+// MARK: - Reusable Components
 private struct SectionHeader: View {
     let title: String
 
     var body: some View {
-        HStack(spacing: 8) {
-            Rectangle()
-                .fill(Color.blue)
-                .frame(width: 3, height: 24)
+        Text(title)
+            .font(.headline)
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 2)
+    }
+}
 
-            Text(title)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(.white)
+private struct GroupCard<Content: View>: View {
+    let spacing: CGFloat
+    @ViewBuilder let content: Content
+
+    init(spacing: CGFloat = 0, @ViewBuilder content: () -> Content) {
+        self.spacing = spacing
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(spacing: spacing) {
+            content
         }
+        .background(Color.white.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }
 
@@ -211,22 +185,27 @@ private struct UserStatCell: View {
         VStack(spacing: 10) {
             Circle()
                 .fill(Color.white.opacity(0.08))
-                .frame(width: 50, height: 50)
+                .frame(width: 48, height: 48)
                 .overlay {
                     Image(systemName: item.icon)
-                        .font(.system(size: 22, weight: .medium))
-                        .foregroundStyle(Color.blue)
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.9))
                 }
 
             Text("\(item.value)")
-                .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(.white)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.primary)
 
             Text(item.title)
-                .font(.system(size: 15))
-                .foregroundStyle(.white.opacity(0.75))
+                .font(.footnote)
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
+        .padding(.vertical, 18)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.white.opacity(0.08))
+        )
     }
 }
 
@@ -235,7 +214,7 @@ private struct PurchasedProductCard: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: item.previewColors,
@@ -252,57 +231,62 @@ private struct PurchasedProductCard: View {
                     }
                 }
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 5) {
                 Text(item.title)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
 
                 if item.kind == .pod {
-                    Text("Remaining: \(item.remainingText) | Last\nused: \(item.lastUsedText)")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.65))
+                    Text("Remaining: \(item.remainingText) · Last used: \(item.lastUsedText)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                         .lineLimit(2)
                 } else {
                     HStack(spacing: 6) {
                         Image(systemName: "wifi")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.system(size: 13, weight: .medium))
                         Text(item.connectionText ?? "")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.subheadline.weight(.medium))
                     }
-                    .foregroundStyle(.green)
+                    .foregroundStyle(.secondary)
                 }
             }
 
             Spacer(minLength: 0)
 
             if let secondaryIcon = item.secondaryActionIcon {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.white.opacity(0.06))
-                    .frame(width: 42, height: 32)
-                    .overlay {
-                        Image(systemName: secondaryIcon)
-                            .foregroundStyle(.white.opacity(0.75))
-                    }
+                Button {
+                } label: {
+                    Image(systemName: secondaryIcon)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(.primary)
+                        .frame(width: 34, height: 34)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(Color.white.opacity(0.06))
+                        )
+                }
+                .buttonStyle(.plain)
             }
 
-            Button {
-            } label: {
-                Text(item.primaryActionTitle)
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 16)
-                    .frame(height: 32)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.blue)
-                    )
-            }
-            .buttonStyle(.plain)
+//            Button {
+//            } label: {
+//                Text(item.primaryActionTitle)
+//                    .font(.subheadline.weight(.medium))
+//                    .foregroundStyle(.primary)
+//                    .padding(.horizontal, 14)
+//                    .frame(height: 34)
+//                    .background(
+//                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+//                            .fill(Color.white.opacity(0.12))
+//                    )
+//            }
+//            .buttonStyle(.plain)
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.09))
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.white.opacity(0.08))
         )
     }
 }
@@ -313,34 +297,34 @@ private struct RecordRow: View {
     var body: some View {
         HStack(spacing: 14) {
             Image(systemName: item.icon)
-                .font(.system(size: 20, weight: .medium))
-                .foregroundStyle(Color.blue)
-                .frame(width: 34)
+                .font(.system(size: 19, weight: .medium))
+                .foregroundStyle(.white.opacity(0.88))
+                .frame(width: 28)
 
             Text(item.title)
-                .font(.system(size: 17))
-                .foregroundStyle(.white)
+                .font(.body)
+                .foregroundStyle(.primary)
 
             Spacer(minLength: 0)
 
             if let badge = item.badgeText {
                 Text(badge)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.white)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
                     .padding(.horizontal, 10)
                     .frame(height: 22)
                     .background(
                         Capsule()
-                            .fill(Color.blue)
+                            .fill(Color.white.opacity(0.08))
                     )
             }
 
             Image(systemName: "chevron.right")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.6))
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.tertiary)
         }
-        .padding(.horizontal, 18)
-        .frame(height: 64)
+        .padding(.horizontal, 16)
+        .frame(height: 58)
         .background(Color.white.opacity(0.02))
     }
 }
@@ -351,19 +335,19 @@ private struct SimpleMenuRow: View {
     var body: some View {
         HStack {
             Text(item.title)
-                .font(.system(size: 17))
-                .foregroundStyle(.white)
+                .font(.body)
+                .foregroundStyle(.primary)
 
             Spacer(minLength: 0)
 
             if item.showsChevron {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.tertiary)
             }
         }
-        .padding(.horizontal, 18)
-        .frame(height: 64)
+        .padding(.horizontal, 16)
+        .frame(height: 58)
         .background(Color.white.opacity(0.02))
     }
 }
@@ -389,9 +373,9 @@ private struct MockUserProfile {
     let memberLevel: String
 
     static let sample = MockUserProfile(
-        name: "Luna_Scents",
+        name: "Dajun X",
         id: "8294567",
-        memberLevel: "Silver"
+        memberLevel: "Gold"
     )
 }
 
@@ -420,7 +404,7 @@ private struct MockPurchasedItem: Identifiable {
     let remainingText: String
     let lastUsedText: String
     let connectionText: String?
-    let primaryActionTitle: String
+//    let primaryActionTitle: String?
     let secondaryActionIcon: String?
     let previewColors: [Color]
 
@@ -431,7 +415,7 @@ private struct MockPurchasedItem: Identifiable {
             remainingText: "78%",
             lastUsedText: "Today",
             connectionText: nil,
-            primaryActionTitle: "Use",
+//            primaryActionTitle: "Use",
             secondaryActionIcon: "cart.fill",
             previewColors: [Color.purple, Color.blue]
         ),
@@ -441,17 +425,17 @@ private struct MockPurchasedItem: Identifiable {
             remainingText: "45%",
             lastUsedText: "Yesterday",
             connectionText: nil,
-            primaryActionTitle: "bind",
+//            primaryActionTitle: "Bind",
             secondaryActionIcon: "cart.fill",
             previewColors: [Color.purple.opacity(0.85), Color.blue]
         ),
         .init(
             kind: .simulator,
-            title: "ScentsFlow Pro\nSimulator",
+            title: "ScentsFlow Pro",
             remainingText: "",
             lastUsedText: "",
             connectionText: "Connected to Bedroom",
-            primaryActionTitle: "Control",
+//            primaryActionTitle: "Control",
             secondaryActionIcon: "arrow.turn.up.right",
             previewColors: [Color.green, Color.cyan]
         )
@@ -467,7 +451,7 @@ private struct MockRecordItem: Identifiable {
     static let sample: [MockRecordItem] = [
         .init(icon: "cart.fill", title: "Shopping Cart", badgeText: "3"),
         .init(icon: "bookmark.fill", title: "My Favorites", badgeText: "8"),
-        .init(icon: "shippingbox.fill", title: "My Orders", badgeText: "Pending(1)"),
+        .init(icon: "shippingbox.fill", title: "My Orders", badgeText: "Pending 1"),
         .init(icon: "clock.arrow.circlepath", title: "Usage History", badgeText: "32")
     ]
 }
@@ -478,20 +462,19 @@ private struct MockSimpleMenuItem: Identifiable {
     let showsChevron: Bool
 
     static let communitySample: [MockSimpleMenuItem] = [
-        .init(title: "My Shares", showsChevron: false),
-        .init(title: "My Comments", showsChevron: false)
+        .init(title: "My Shares", showsChevron: true),
+        .init(title: "My Comments", showsChevron: true)
     ]
 
     static let settingsSample: [MockSimpleMenuItem] = [
-        .init(title: "Settings", showsChevron: false),
-        .init(title: "Help Center", showsChevron: false)
+        .init(title: "Settings", showsChevron: true),
+        .init(title: "Help Center", showsChevron: true)
     ]
 }
 
 #Preview {
     NavigationStack {
         UserPage()
-            .customTopBar("My Account")
     }
     .preferredColorScheme(.dark)
 }
