@@ -50,6 +50,7 @@ struct ControlsSection: View {
                                 includedIDs: vm.included,
                                 focusedID: vm.focusedPodID,
                                 canSelectMore: vm.canSelectMore,
+                                isPowerOn: vm.isPowerOn,
                                 onTap: { vm.toggle($0) }
                             )
                         }
