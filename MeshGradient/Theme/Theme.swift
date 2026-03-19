@@ -87,3 +87,71 @@ extension Theme {
     }
 }
 
+// MARK: - Background hierarchy tokens
+extension Theme {
+    enum Background {
+        // Page-level backgrounds
+        static let canvas = Color(uiColor: .systemBackground)
+        static let groupedCanvas = Color(uiColor: .systemGroupedBackground)
+
+        // Section/group backgrounds
+        static let surface = Color(uiColor: .secondarySystemBackground)
+        static let insetSurface = Color(uiColor: .tertiarySystemBackground)
+
+        // Semantic lines / borders / fills
+        static let separator = Color(uiColor: .separator)
+        static let opaqueSeparator = Color(uiColor: .opaqueSeparator)
+        static let softFill = Color(uiColor: .quaternarySystemFill)
+        static let mediumFill = Color(uiColor: .tertiarySystemFill)
+
+        // ShapeStyle-based materials for elevated UI
+        static func cardStyle(for scheme: ColorScheme) -> AnyShapeStyle {
+            switch scheme {
+            case .dark:
+                return AnyShapeStyle(.regularMaterial)
+            case .light:
+                return AnyShapeStyle(Color(uiColor: .secondarySystemBackground))
+            @unknown default:
+                return AnyShapeStyle(Color(uiColor: .secondarySystemBackground))
+            }
+        }
+
+        static func floatingStyle(for scheme: ColorScheme) -> AnyShapeStyle {
+            switch scheme {
+            case .dark:
+                return AnyShapeStyle(.thickMaterial)
+            case .light:
+                return AnyShapeStyle(.regularMaterial)
+            @unknown default:
+                return AnyShapeStyle(.regularMaterial)
+            }
+        }
+
+        static func controlStyle(for scheme: ColorScheme) -> AnyShapeStyle {
+            switch scheme {
+            case .dark:
+                return AnyShapeStyle(.thinMaterial)
+            case .light:
+                return AnyShapeStyle(Color(uiColor: .tertiarySystemBackground))
+            @unknown default:
+                return AnyShapeStyle(Color(uiColor: .tertiarySystemBackground))
+            }
+        }
+
+        static var ultraThinMaterialStyle: AnyShapeStyle {
+            AnyShapeStyle(.ultraThinMaterial)
+        }
+
+        static var thinMaterialStyle: AnyShapeStyle {
+            AnyShapeStyle(.thinMaterial)
+        }
+
+        static var regularMaterialStyle: AnyShapeStyle {
+            AnyShapeStyle(.regularMaterial)
+        }
+
+        static var thickMaterialStyle: AnyShapeStyle {
+            AnyShapeStyle(.thickMaterial)
+        }
+    }
+}

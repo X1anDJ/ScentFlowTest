@@ -10,10 +10,12 @@ import SwiftUI
 @MainActor
 struct MeshGradientApp: App {
     @StateObject private var appModel = AppModel()   // ← one source of truth
-
+    @StateObject private var authSession = AuthSession()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(authSession)
                 .environmentObject(appModel)         // ← inject
                 .applyGrayscaleTint()
                 .environment(\.colorScheme, .dark)

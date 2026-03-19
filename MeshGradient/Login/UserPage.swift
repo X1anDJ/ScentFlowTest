@@ -2,13 +2,18 @@
 //  UserPage.swift
 //  MeshGradient
 //
+//  Created by Dajun Xian on 3/18/26.
+//
+
 
 import SwiftUI
 
 struct UserPage: View {
-    @State private var selectedProductTab: ProductTab = .all
+    @EnvironmentObject private var authSession: AuthSession
 
-    private let profile = MockUserProfile.sample
+    @State private var selectedProductTab: ProductTab = .all
+    @State private var showLogin = false
+
     private let productStats = MockUserStats.sample
     private let purchasedProducts = MockPurchasedItem.sample
     private let recordItems = MockRecordItem.sample
@@ -26,21 +31,45 @@ struct UserPage: View {
         }
     }
 
+    private var displayName: String {
+        authSession.currentUser?.name ?? "Guest"
+    }
+
+    private var profileSubtitle: String {
+        if let user = authSession.currentUser {
+            return "ID: \(user.id) · \(user.memberLevel) Member"
+        }
+        return "Tap to sign in"
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 profileSection
-                statsSection
-                purchasedProductsSection
-                recordsSection
-                simpleSection(title: "Community Interaction", items: communityItems)
-                simpleSection(title: "Account Settings", items: settingItems)
+
+                if authSession.isLoggedIn {
+                    statsSection
+                    purchasedProductsSection
+                    recordsSection
+                    simpleSection(title: "Community Interaction", items: communityItems)
+                } else {
+//                    guestPromptSection
+                }
+
+                accountSettingsSection
             }
             .padding(.horizontal, 16)
             .padding(.top, 14)
             .padding(.bottom, 28)
         }
         .background(Color.black.ignoresSafeArea())
+        .sheet(isPresented: $showLogin) {
+            NavigationStack {
+                LoginView()
+                    .environmentObject(authSession)
+            }
+        }
+        
     }
 }
 
@@ -52,22 +81,73 @@ private extension UserPage {
                 .fill(Color.white.opacity(0.12))
                 .frame(width: 92, height: 92)
                 .overlay {
-                    Image(systemName: "person.fill")
-                        .font(.system(size: 34, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.9))
+                    Image(systemName: "person.crop.circle.fill")
+                        .font(.system(size: 42, weight: .regular))
+                        .foregroundStyle(.white.opacity(0.92))
                 }
                 .padding(.top, 8)
 
-            Text(profile.name)
+            Text(displayName)
                 .font(.title2.weight(.semibold))
                 .foregroundStyle(.primary)
 
-            Text("ID: \(profile.id) · \(profile.memberLevel) Member")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                Text(profileSubtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                if !authSession.isLoggedIn {
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                }
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 4)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard !authSession.isLoggedIn else { return }
+            showLogin = true
+        }
+    }
+
+    var guestPromptSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            SectionHeader(title: "Quick Sign In")
+
+            GroupCard {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Use the test account below to verify the login flow.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Phone: +86 16666666666")
+                        Text("SMS Code: 0000")
+                        Text("Password: 0000")
+                    }
+                    .font(.footnote.monospaced())
+                    .foregroundStyle(.primary)
+
+                    Button {
+                        showLogin = true
+                    } label: {
+                        Text("Sign In")
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .background(
+                                Capsule(style: .continuous)
+                                    .fill(Color.accentColor)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(18)
+            }
+        }
     }
 
     var statsSection: some View {
@@ -108,6 +188,24 @@ private extension UserPage {
         }
     }
 
+    var accountSettingsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            SectionHeader(title: "Account Settings")
+
+            GroupCard(spacing: 1) {
+                ForEach(settingItems) { item in
+                    SimpleMenuRow(item: item)
+                }
+
+                if authSession.isLoggedIn {
+                    LogoutRow {
+                        authSession.logout()
+                    }
+                }
+            }
+        }
+    }
+
     var productTabSelector: some View {
         HStack(spacing: 8) {
             ForEach(ProductTab.allCases, id: \.self) { tab in
@@ -123,9 +221,11 @@ private extension UserPage {
                         .frame(height: 34)
                         .background(
                             Capsule()
-                                .fill(selectedProductTab == tab
-                                      ? Color.white.opacity(0.16)
-                                      : Color.white.opacity(0.06))
+                                .fill(
+                                    selectedProductTab == tab
+                                    ? Color.white.opacity(0.16)
+                                    : Color.white.opacity(0.06)
+                                )
                         )
                 }
                 .buttonStyle(.plain)
@@ -268,20 +368,6 @@ private struct PurchasedProductCard: View {
                 }
                 .buttonStyle(.plain)
             }
-
-//            Button {
-//            } label: {
-//                Text(item.primaryActionTitle)
-//                    .font(.subheadline.weight(.medium))
-//                    .foregroundStyle(.primary)
-//                    .padding(.horizontal, 14)
-//                    .frame(height: 34)
-//                    .background(
-//                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-//                            .fill(Color.white.opacity(0.12))
-//                    )
-//            }
-//            .buttonStyle(.plain)
         }
         .padding(16)
         .background(
@@ -352,129 +438,42 @@ private struct SimpleMenuRow: View {
     }
 }
 
-// MARK: - Mock Models
-private enum ProductTab: CaseIterable {
-    case all
-    case pods
-    case simulators
+private struct LogoutRow: View {
+    let action: () -> Void
 
-    var title: String {
-        switch self {
-        case .all: return "All"
-        case .pods: return "Scent Pods"
-        case .simulators: return "Simulators"
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Text("Log Out")
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.primary)
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "rectangle.portrait.and.arrow.right")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 16)
+            .frame(height: 58)
+            .background(Color.white.opacity(0.02))
         }
+        .buttonStyle(.plain)
     }
 }
 
-private struct MockUserProfile {
-    let name: String
-    let id: String
-    let memberLevel: String
-
-    static let sample = MockUserProfile(
-        name: "Dajun X",
-        id: "8294567",
-        memberLevel: "Gold"
-    )
-}
-
-private struct MockUserStats: Identifiable {
-    let id = UUID()
-    let icon: String
-    let value: Int
-    let title: String
-
-    static let sample: [MockUserStats] = [
-        .init(icon: "cylinder.split.1x2.fill", value: 15, title: "My Points"),
-        .init(icon: "ticket.fill", value: 2, title: "Coupons"),
-        .init(icon: "heart.fill", value: 42, title: "Likes")
-    ]
-}
-
-private enum PurchasedItemKind {
-    case pod
-    case simulator
-}
-
-private struct MockPurchasedItem: Identifiable {
-    let id = UUID()
-    let kind: PurchasedItemKind
-    let title: String
-    let remainingText: String
-    let lastUsedText: String
-    let connectionText: String?
-//    let primaryActionTitle: String?
-    let secondaryActionIcon: String?
-    let previewColors: [Color]
-
-    static let sample: [MockPurchasedItem] = [
-        .init(
-            kind: .pod,
-            title: "Bluebell Pod",
-            remainingText: "78%",
-            lastUsedText: "Today",
-            connectionText: nil,
-//            primaryActionTitle: "Use",
-            secondaryActionIcon: "cart.fill",
-            previewColors: [Color.purple, Color.blue]
-        ),
-        .init(
-            kind: .pod,
-            title: "Lavender Pod",
-            remainingText: "45%",
-            lastUsedText: "Yesterday",
-            connectionText: nil,
-//            primaryActionTitle: "Bind",
-            secondaryActionIcon: "cart.fill",
-            previewColors: [Color.purple.opacity(0.85), Color.blue]
-        ),
-        .init(
-            kind: .simulator,
-            title: "ScentsFlow Pro",
-            remainingText: "",
-            lastUsedText: "",
-            connectionText: "Connected to Bedroom",
-//            primaryActionTitle: "Control",
-            secondaryActionIcon: "arrow.turn.up.right",
-            previewColors: [Color.green, Color.cyan]
-        )
-    ]
-}
-
-private struct MockRecordItem: Identifiable {
-    let id = UUID()
-    let icon: String
-    let title: String
-    let badgeText: String?
-
-    static let sample: [MockRecordItem] = [
-        .init(icon: "cart.fill", title: "Shopping Cart", badgeText: "3"),
-        .init(icon: "bookmark.fill", title: "My Favorites", badgeText: "8"),
-        .init(icon: "shippingbox.fill", title: "My Orders", badgeText: "Pending 1"),
-        .init(icon: "clock.arrow.circlepath", title: "Usage History", badgeText: "32")
-    ]
-}
-
-private struct MockSimpleMenuItem: Identifiable {
-    let id = UUID()
-    let title: String
-    let showsChevron: Bool
-
-    static let communitySample: [MockSimpleMenuItem] = [
-        .init(title: "My Shares", showsChevron: true),
-        .init(title: "My Comments", showsChevron: true)
-    ]
-
-    static let settingsSample: [MockSimpleMenuItem] = [
-        .init(title: "Settings", showsChevron: true),
-        .init(title: "Help Center", showsChevron: true)
-    ]
-}
-
-#Preview {
+#Preview("Guest") {
     NavigationStack {
         UserPage()
     }
+    .environmentObject(AuthSession())
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Logged In") {
+    NavigationStack {
+        UserPage()
+    }
+    .environmentObject(AuthSession.previewLoggedIn)
     .preferredColorScheme(.dark)
 }

@@ -37,8 +37,8 @@ struct ContentView: View {
 }
 
 #Preview {
-    // Previews need the environment object as well
     ContentView()
         .environmentObject(AppModel())
+        .environmentObject(AuthSession())
         .preferredColorScheme(.dark)
 }

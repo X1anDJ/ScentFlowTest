@@ -86,14 +86,14 @@ struct ControlPage: View {
                             DeviceInfoPage(device: selectedDevice)
                         } label: {
                             Image(systemName: "info.circle")
-                                .font(.system(size: 18, weight: .semibold))
+                                .font(.system(size: 20, weight: .semibold))
                                 .foregroundStyle(.secondary)
                                 .frame(width: 28, height: 28)
                         }
                         .buttonStyle(.plain)
                     }
                 }
-                .padding(.top, 4)
+//                .padding(.top, 4)
                 .padding(.horizontal, 16)
 
                 GradientContainerCircle(
