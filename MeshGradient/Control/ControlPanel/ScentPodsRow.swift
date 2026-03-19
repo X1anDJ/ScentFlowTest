@@ -14,6 +14,8 @@ struct ScentPodsRow: View {
     private let ringWidth: CGFloat = 3
     private let focusScale: CGFloat = 1.1
 
+    @State private var animationStartTime: TimeInterval?
+
     private var shouldAnimateEmptyState: Bool {
         isPowerOn && includedIDs.isEmpty
     }
@@ -40,6 +42,18 @@ struct ScentPodsRow: View {
             .frame(maxWidth: .infinity, minHeight: diameter, idealHeight: diameter)
             .padding(.vertical, 6)
             .accessibilityElement(children: .contain)
+        }
+        .onAppear {
+            if shouldAnimateEmptyState {
+                animationStartTime = Date.timeIntervalSinceReferenceDate
+            }
+        }
+        .onChange(of: shouldAnimateEmptyState) { _, isActive in
+            if isActive {
+                animationStartTime = Date.timeIntervalSinceReferenceDate
+            } else {
+                animationStartTime = nil
+            }
         }
     }
 
@@ -71,7 +85,8 @@ struct ScentPodsRow: View {
         let cascadeDuration = Double(podCount - 1) * stagger + perPodDuration
         let totalDuration = cascadeDuration + restDuration
 
-        let timeInLoop = time.truncatingRemainder(dividingBy: totalDuration)
+        let relativeTime = max(0, time - (animationStartTime ?? time))
+        let timeInLoop = relativeTime.truncatingRemainder(dividingBy: totalDuration)
         let startTime = Double(index) * stagger
         let localTime = timeInLoop - startTime
 

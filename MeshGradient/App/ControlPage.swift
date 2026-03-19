@@ -69,7 +69,7 @@ struct ControlPage: View {
 
     var body: some View {
         ZStack {
-            VStack(spacing: 12) {
+            VStack(spacing: 0) {
                 HStack(spacing: 12) {
                     DeviceMenuBar(
                         devicesService: app.devicesService,
@@ -127,7 +127,7 @@ struct ControlPage: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .padding(.horizontal, UI.cardHPad)
                 .padding(.bottom, UI.cardBottomPad)
-                .shadow(radius: 6)
+//                .shadow(radius: 6)
             }
         }
         .sheet(isPresented: $showScanner) {

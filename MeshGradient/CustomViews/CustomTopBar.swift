@@ -34,7 +34,7 @@ struct CustomTopBar<Leading: View, Trailing: View>: View {
             trailing
         }
         .padding(.horizontal, 16)
-        .padding(.bottom, 8)
+//        .padding(.bottom, 8)
         .background(.clear) // swap to `.bar` if you want a nav-bar look
     }
 }
