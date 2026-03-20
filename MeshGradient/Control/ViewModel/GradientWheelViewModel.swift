@@ -27,6 +27,13 @@ actor GradientWheelBuilder {
 @MainActor
 final class GradientWheelViewModel: ObservableObject {
 
+    // MARK: - For template player tracking
+    @Published private(set) var currentTemplateID: UUID?
+
+    var isUsingTemplate: Bool {
+        currentTemplateID != nil
+    }
+    
     // MARK: - External, live inputs (device pods + power)
     @Published private(set) var orderedPodIDs: [UUID] = []
     private var colorsByPodID: [UUID: Color] = [:]
@@ -89,16 +96,15 @@ final class GradientWheelViewModel: ObservableObject {
     func setFanSpeed(_ v: Double) { fanSpeed = max(0, min(1, v)) }
 
     func applyTemplate(_ template: ScentsTemplate?, on device: Device) {
-        
-        // If no current settings (initial state), make everything default.
+
         guard let template else {
-            // Reset VM to default, powered-off, empty state
             rebuildTask?.cancel()
             clearTask?.cancel()
 
             included = []
             opacities = [:]
             focusedPodID = nil
+            currentTemplateID = nil
 
             fanSpeed = 0.5
             isPowerOn = false
@@ -121,12 +127,16 @@ final class GradientWheelViewModel: ObservableObject {
         opacities = newOpacities
 
         focusedPodID = ordered.first
+        currentTemplateID = template.id
         ensureFocusedPodIsValid()
 
         if isPowerOn { scheduleWheelRebuild() }
     }
     
+
     func toggle(_ podID: UUID) {
+        let oldIncluded = included
+
         if included.contains(podID) {
             if focusedPodID == podID {
                 included.remove(podID)
@@ -141,6 +151,10 @@ final class GradientWheelViewModel: ObservableObject {
             opacities[podID] = opacities[podID] ?? (AppConfig.maxIntensity * 0.5)
         }
 
+        if included != oldIncluded {
+            currentTemplateID = nil
+        }
+
         ensureFocusedPodIsValid()
 
         if isPowerOn { scheduleWheelRebuild() }
@@ -148,6 +162,12 @@ final class GradientWheelViewModel: ObservableObject {
 
     func setOpacity(_ value: Double, for podID: UUID) {
         let clamped = max(0.0, min(AppConfig.maxIntensity, value))
+        let oldValue = opacities[podID] ?? 0
+
+        if abs(oldValue - clamped) > 0.0001 {
+            currentTemplateID = nil
+        }
+
         opacities[podID] = clamped
         if isPowerOn { scheduleWheelRebuild() }
     }
@@ -207,7 +227,8 @@ final class GradientWheelViewModel: ObservableObject {
         included = s.wheel.included
         opacities = s.wheel.opacities
         focusedPodID = s.wheel.focusedPodID
-
+        currentTemplateID = nil
+        
         ensureFocusedPodIsValid()
 
         setPower(s.isPowerOn)

@@ -75,4 +75,20 @@ final class AppModel: ObservableObject {
         controlService.send(.applyTemplate(templateID: template.id), to: device)
         templatesService.setActiveTemplateID(template.id)
     }
+    
+    func applyPreviousTemplate(to vm: GradientWheelViewModel, on device: Device) {
+        guard vm.isUsingTemplate,
+              let template = templatesService.previousTemplate()
+        else { return }
+
+        vm.applyTemplate(template, on: device)
+    }
+
+    func applyNextTemplate(to vm: GradientWheelViewModel, on device: Device) {
+        guard vm.isUsingTemplate,
+              let template = templatesService.nextTemplate()
+        else { return }
+
+        vm.applyTemplate(template, on: device)
+    }
 }

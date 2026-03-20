@@ -104,4 +104,37 @@ final class TemplatesService: ObservableObject {
         // This write is tiny; OK on main, but you can also detach if you prefer.
         UserDefaults.standard.set(s, forKey: activeKey)
     }
+    
+    // MARK: - Template Playlist
+
+    var activeTemplateIndex: Int? {
+        guard let id = activeTemplateID else { return nil }
+        return templates.firstIndex(where: { $0.id == id })
+    }
+
+    var canGoPrevious: Bool {
+        guard let i = activeTemplateIndex else { return false }
+        return i > 0
+    }
+
+    var canGoNext: Bool {
+        guard let i = activeTemplateIndex else { return false }
+        return i < templates.count - 1
+    }
+
+    @discardableResult
+    func previousTemplate() -> ScentsTemplate? {
+        guard let i = activeTemplateIndex, i > 0 else { return nil }
+        let template = templates[i - 1]
+        setActiveTemplateID(template.id)
+        return template
+    }
+
+    @discardableResult
+    func nextTemplate() -> ScentsTemplate? {
+        guard let i = activeTemplateIndex, i < templates.count - 1 else { return nil }
+        let template = templates[i + 1]
+        setActiveTemplateID(template.id)
+        return template
+    }
 }

@@ -34,10 +34,21 @@ struct ControlPageSegmentPanel: View {
                 Group {
                     switch segment {
                     case .controls:
-                        ControlsSection(
-                            vm: vm,
-                            isExpanded: $controlsExpanded
-                        )
+                        if let device = currentDevice {
+                            ControlsSection(
+                                vm: vm,
+                                device: device,
+                                isExpanded: $controlsExpanded
+                            )
+                        } else {
+                            VStack(spacing: 12) {
+                                Image(systemName: "macmini")
+                                Text("No devices available")
+                                    .font(.headline)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 180)
+                        }
 
                     case .templates:
                         if let device = currentDevice {
