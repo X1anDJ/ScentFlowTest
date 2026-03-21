@@ -11,6 +11,12 @@ struct PowerButtonRow: View {
     let canGoNext: Bool
     let onPrevious: () -> Void
     let onNext: () -> Void
+    let onOpenTemplates: () -> Void
+
+    let turnOffTimer: TurnOffTimerController
+    let onStartTurnOffTimer: (TimeInterval) -> Void
+    let onCancelTurnOffTimer: () -> Void
+    let listButtonBounceToken: Int
 
     init(
         isOn: Bool,
@@ -21,7 +27,12 @@ struct PowerButtonRow: View {
         canGoPrevious: Bool = false,
         canGoNext: Bool = false,
         onPrevious: @escaping () -> Void = {},
-        onNext: @escaping () -> Void = {}
+        onNext: @escaping () -> Void = {},
+        onOpenTemplates: @escaping () -> Void = {},
+        turnOffTimer: TurnOffTimerController,
+        onStartTurnOffTimer: @escaping (TimeInterval) -> Void,
+        onCancelTurnOffTimer: @escaping () -> Void,
+        listButtonBounceToken: Int = 0
     ) {
         self.isOn = isOn
         self.speed = speed
@@ -32,12 +43,26 @@ struct PowerButtonRow: View {
         self.canGoNext = canGoNext
         self.onPrevious = onPrevious
         self.onNext = onNext
+        self.onOpenTemplates = onOpenTemplates
+        self.turnOffTimer = turnOffTimer
+        self.onStartTurnOffTimer = onStartTurnOffTimer
+        self.onCancelTurnOffTimer = onCancelTurnOffTimer
+        self.listButtonBounceToken = listButtonBounceToken
     }
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack  {
+            TurnOffTimerButton(
+                isDeviceOn: isOn,
+                controller: turnOffTimer,
+                onStart: onStartTurnOffTimer,
+                onCancel: onCancelTurnOffTimer
+            )
+
+            Spacer()
+            
             if showsTemplateTransport {
-                TransportButton(
+                ControlButton(
                     systemName: "backward.fill",
                     isEnabled: canGoPrevious,
                     action: onPrevious
@@ -50,55 +75,58 @@ struct PowerButtonRow: View {
             )
 
             if showsTemplateTransport {
-                TransportButton(
+                ControlButton(
                     systemName: "forward.fill",
                     isEnabled: canGoNext,
                     action: onNext
                 )
             }
 
-//            if isOn {
-//                HStack(spacing: 10) {
-//                    Slider(
-//                        value: Binding(
-//                            get: { speed },
-//                            set: { onChangeSpeed(min(1, max(0, $0))) }
-//                        ),
-//                        in: 0...1
-//                    )
-//                    .accessibilityLabel("Fan speed")
-//                    .sliderTintGray()
-//
-//                    Text("\(Int(speed * 100))%")
-//                        .font(.footnote.monospacedDigit())
-//                        .frame(width: 44, alignment: .trailing)
-//                        .foregroundStyle(.secondary)
-//                }
-//                .transition(.move(edge: .trailing).combined(with: .opacity))
-//            }
+            Spacer()
+            
+            ControlButton(
+                systemName: "list.bullet",
+                isEnabled: true,
+                action: onOpenTemplates,
+                bounceToken: listButtonBounceToken
+            )
         }
+        .frame(maxWidth: .infinity, alignment: .center)
         .accessibilityElement(children: .contain)
     }
 }
 
-private struct TransportButton: View {
+private struct ControlButton: View {
     let systemName: String
     let isEnabled: Bool
     let action: () -> Void
+    let bounceToken: Int
 
     private let shape = Capsule()
-    private let width: CGFloat = 44
-    private let height: CGFloat = 44
+    private let size: CGFloat = 44
+
+    init(
+        systemName: String,
+        isEnabled: Bool,
+        action: @escaping () -> Void,
+        bounceToken: Int = 0
+    ) {
+        self.systemName = systemName
+        self.isEnabled = isEnabled
+        self.action = action
+        self.bounceToken = bounceToken
+    }
 
     var body: some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(isEnabled ? .primary : .secondary)
-                .frame(width: width, height: height)
+                .frame(width: size, height: size)
                 .background(.thickMaterial, in: shape)
                 .contentShape(shape)
                 .opacity(isEnabled ? 1.0 : 0.45)
+                .symbolEffect(.bounce, value: bounceToken)
         }
         .buttonStyle(.plain)
         .disabled(!isEnabled)
@@ -137,20 +165,16 @@ private struct GuidedPowerButton: View {
         }
         .buttonStyle(.plain)
         .overlay {
-            if showRing && !isOn {
-                spinningRing
-                    .id(ringToken)
-                    .padding(-4)
-                    .allowsHitTesting(false)
-                    .onAppear {
-                        startSpin()
-                    }
-                    .transition(.opacity)
-            }
+//            if showRing && !isOn {
+//                spinningRing
+//                    .id(ringToken)
+//                    .padding(-4)
+//                    .allowsHitTesting(false)
+//                    .onAppear { startSpin() }
+//                    .transition(.opacity)
+//            }
         }
-        .onAppear {
-            updateRingVisibility(for: isOn)
-        }
+        .onAppear { updateRingVisibility(for: isOn) }
         .onChange(of: isOn) { _, newValue in
             updateRingVisibility(for: newValue)
         }

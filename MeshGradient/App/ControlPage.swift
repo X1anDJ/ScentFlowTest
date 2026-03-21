@@ -13,7 +13,7 @@ struct ControlPage: View {
         static let collapsedScale: CGFloat = 1.00
         static let cardHPad: CGFloat = 16
         static let cardBottomPad: CGFloat = 16
-        static let collapsedCardHeight: CGFloat = 340
+        static let collapsedCardHeight: CGFloat = 334
     }
 
     @EnvironmentObject private var app: AppModel
@@ -124,12 +124,14 @@ struct ControlPage: View {
                     controlsExpanded: $controlsExpanded,
                     collapsedHeight: UI.collapsedCardHeight
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+//                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .containerShape(.rect(cornerRadius: 32, style: .continuous))
                 .padding(.horizontal, UI.cardHPad)
                 .padding(.bottom, UI.cardBottomPad)
 //                .shadow(radius: 6)
             }
         }
+
         .sheet(isPresented: $showScanner) {
             ScannerSheet()
         }

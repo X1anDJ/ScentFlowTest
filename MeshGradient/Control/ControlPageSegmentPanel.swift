@@ -22,58 +22,63 @@ struct ControlPageSegmentPanel: View {
     }
 
     var body: some View {
-        ZStack {
-            VStack {
-                Picker("", selection: $segment) {
-                    Text("Controls").tag(ControlPage.Segment.controls)
-                    Text("Templates").tag(ControlPage.Segment.templates)
-                }
-                .pickerStyle(.segmented)
-                .padding(.vertical, 16)
+//        ZStack {
+//
+//        }
+        VStack {
+//                Picker("", selection: $segment) {
+//                    Text("Controls").tag(ControlPage.Segment.controls)
+//                    Text("Templates").tag(ControlPage.Segment.templates)
+//                }
+//                .pickerStyle(.segmented)
+//                .padding(.vertical, 16)
 
-                Group {
-                    switch segment {
-                    case .controls:
-                        if let device = currentDevice {
-                            ControlsSection(
-                                vm: vm,
-                                device: device,
-                                isExpanded: $controlsExpanded
-                            )
-                        } else {
-                            VStack(spacing: 12) {
-                                Image(systemName: "macmini")
-                                Text("No devices available")
-                                    .font(.headline)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .frame(maxWidth: .infinity, minHeight: 180)
+            Group {
+                switch segment {
+                case .controls:
+                    if let device = currentDevice {
+                        ControlsSection(
+                            vm: vm,
+                            device: device,
+                            isExpanded: $controlsExpanded
+                        )
+                    } else {
+                        VStack(spacing: 12) {
+                            Image(systemName: "macmini")
+                            Text("No devices available")
+                                .font(.headline)
+                                .foregroundStyle(.secondary)
                         }
+                        .frame(maxWidth: .infinity, minHeight: 180)
+                    }
 
-                    case .templates:
-                        if let device = currentDevice {
-                            TemplatesSection(
-                                templatesService: templatesService,
-                                vm: vm,
-                                device: device
-                            )
-                        } else {
-                            VStack(spacing: 12) {
-                                Image(systemName: "macmini")
-                                Text("No devices available")
-                                    .font(.headline)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .frame(maxWidth: .infinity, minHeight: 180)
+                case .templates:
+                    if let device = currentDevice {
+                        TemplatesSection(
+                            templatesService: templatesService,
+                            vm: vm,
+                            device: device
+                        )
+                    } else {
+                        VStack(spacing: 12) {
+                            Image(systemName: "macmini")
+                            Text("No devices available")
+                                .font(.headline)
+                                .foregroundStyle(.secondary)
                         }
+                        .frame(maxWidth: .infinity, minHeight: 180)
                     }
                 }
-                .id(segment)
             }
-            .padding(.horizontal, 16)
-            .frame(maxHeight: .infinity, alignment: .top)
+            .id(segment)
         }
-        .adaptiveGlassBackground(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(.horizontal, 16)
+        .padding(.top, 16)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .adaptiveGlassBackground(
+            RoundedRectangle(cornerRadius: 16, style: .continuous),
+            useConcentricOnIOS26: true
+        )
         .frame(height: shouldAutoSize ? nil : collapsedHeight, alignment: .bottom)
         .animation(.bouncy, value: shouldAutoSize)
     }

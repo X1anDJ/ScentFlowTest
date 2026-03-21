@@ -7,30 +7,46 @@
 
 import SwiftUI
 
-/// Glass/material background helper that prefers the newest iOS 26 API,
-/// and gracefully falls back on earlier systems.
-struct AdaptiveGlassBackground<S: Shape>: ViewModifier {
-    let shape: S
+/// Glass/material background helper that prefers iOS 26 Liquid Glass,
+/// and falls back to material on earlier systems.
+struct AdaptiveGlassBackground<FallbackShape: Shape>: ViewModifier {
+    let fallbackShape: FallbackShape
+    let useConcentricOnIOS26: Bool
 
+    @ViewBuilder
     func body(content: Content) -> some View {
         #if os(iOS)
         if #available(iOS 26.0, *) {
-            // Your desired effect on iOS 26+
-            content.glassEffect(.regular, in: shape)
+            if useConcentricOnIOS26 {
+                content.glassEffect(.regular, in: ConcentricRectangle())
+            } else {
+                content.glassEffect(.regular, in: fallbackShape)
+            }
         } else {
-            // Earlier iOS: approximate with material
-            content.background(.ultraThinMaterial, in: shape)
+            content.background(.ultraThinMaterial, in: fallbackShape)
         }
         #else
-        // Non-iOS platforms: material fallback
-        content.background(.ultraThinMaterial, in: shape)
+        content.background(.ultraThinMaterial, in: fallbackShape)
         #endif
     }
 }
 
 extension View {
     /// Apply a glassy background clipped to `shape`, using the best API available.
-    func adaptiveGlassBackground<S: Shape>(_ shape: S) -> some View {
-        modifier(AdaptiveGlassBackground(shape: shape))
+    ///
+    /// - Parameters:
+    ///   - shape: Fallback shape for pre-iOS 26 systems, or the explicit iOS 26 shape when
+    ///            `useConcentricOnIOS26` is false.
+    ///   - useConcentricOnIOS26: Uses `ConcentricRectangle()` on iOS 26+.
+    func adaptiveGlassBackground<S: Shape>(
+        _ shape: S,
+        useConcentricOnIOS26: Bool = false
+    ) -> some View {
+        modifier(
+            AdaptiveGlassBackground(
+                fallbackShape: shape,
+                useConcentricOnIOS26: useConcentricOnIOS26
+            )
+        )
     }
 }

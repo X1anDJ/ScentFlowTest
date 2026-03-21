@@ -95,6 +95,11 @@ final class GradientWheelViewModel: ObservableObject {
     func togglePower() { setPower(!isPowerOn) }
     func setFanSpeed(_ v: Double) { fanSpeed = max(0, min(1, v)) }
 
+
+    func setCurrentTemplateID(_ id: UUID?) {
+        currentTemplateID = id
+    }
+    
     func applyTemplate(_ template: ScentsTemplate?, on device: Device) {
 
         guard let template else {

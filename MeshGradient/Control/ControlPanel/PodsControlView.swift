@@ -62,8 +62,8 @@ struct PodsControlView: View {
 
     private var header: some View {
         HStack {
-            Text("Pods")
-                .font(.subheadline.bold())
+//            Text("Pods")
+//                .font(.subheadline.bold())
 
             Spacer()
 
